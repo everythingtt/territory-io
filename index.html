@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Territory.io - Loading...</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #020617;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #3b82f6;
+            font-family: 'Inter', sans-serif;
+        }
+        .loader {
+            text-align: center;
+        }
+        .spinner {
+            border: 4px solid rgba(59, 130, 246, 0.1);
+            border-left-color: #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading-screen" class="loader">
+        <div class="spinner"></div>
+        <p>Connecting to Tunnel Server...</p>
+    </div>
+    
+    <iframe id="game-frame" src=""></iframe>
+
+    <script>
+        // CONFIGURATION: Set your tunneling server URL here
+        const TUNNEL_URL = 'https://837d78c33a4a737a-197-54-164-231.serveousercontent.com/game.html';
+
+        const frame = document.getElementById('game-frame');
+        const loader = document.getElementById('loading-screen');
+
+        function loadGame() {
+            frame.src = TUNNEL_URL;
+            
+            frame.onload = () => {
+                loader.style.display = 'none';
+                frame.style.display = 'block';
+            };
+
+            // Error handling for timeout or unreachable tunnel
+            setTimeout(() => {
+                if (loader.style.display !== 'none') {
+                    loader.innerHTML = `
+                        <p style="color: #ef4444;">Connection Failed</p>
+                        <p style="font-size: 12px; color: #94a3b8;">The tunneling server may be offline or the URL has changed.</p>
+                        <button onclick="location.reload()" style="background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin-top: 10px;">Retry</button>
+                    `;
+                }
+            }, 10000); // 10 second timeout
+        }
+
+        // Initialize loading
+        window.addEventListener('DOMContentLoaded', loadGame);
+    </script>
+</body>
+</html>
