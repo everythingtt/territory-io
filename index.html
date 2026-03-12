@@ -1817,8 +1817,11 @@
                 const isAlly = state.alliances.has(`${Math.min(hostIdx, i)}-${Math.max(hostIdx, i)}`);
                 
                 if(isTeammate || isAlly) {
+                    // Skip player (index 1) - they must join manually via Diplomacy or modal invitation
+                    if (i === 1) continue;
+                    
                     // Only add if ally is not in another war and under limit
-                    const allyInWar = state.wars.some(w => w.host === i || w.target === i || w.allies.includes(i));
+                    const allyInWar = state.wars.some(w => w.host === i || w.target === i || w.allies.includes(i) || w.targetAllies.includes(i));
                     if (!allyInWar && allies.length < 3) allies.push(i);
                 }
             }
@@ -2115,7 +2118,7 @@
                             enemy.hasCapital = false;
                             enemy.capitalPos = null;
                             enemy.paralyzedCycles = 15;
-                            notify(`${enemy.name}'s Capital has been DESTROYED! They are paralyzed!`, 'war');
+                            notify(`${enemy.name}'s Capital has been DESTROYED! They are paralyzed!`, 'war', x, y);
 
                             state.tileTypes[idx] = 2; // Turn into regular land
                             // Remove label
@@ -2248,7 +2251,7 @@
                         enemy.hasCapital = false;
                         enemy.capitalPos = null;
                         enemy.paralyzedCycles = 15;
-                        notify(`${enemy.name}'s Capital has been DESTROYED by ${bot.name}!`, 'war');
+                        notify(`${enemy.name}'s Capital has been DESTROYED by ${bot.name}!`, 'war', tx, ty);
 
                         state.tileTypes[idx] = 2;
                         // Remove label
@@ -2497,7 +2500,7 @@
                             war.initialTiles[war.target] = state.entities[war.target].ownedCount;
                             war.allies.forEach(aIdx => war.initialTiles[aIdx] = state.entities[aIdx].ownedCount);
 
-                            notify(`WAR DECLARED! ${state.entities[war.host].name} vs ${state.entities[war.target].name}`, 'war');
+                            notify(`WAR DECLARED! ${state.entities[war.host].name} vs ${state.entities[war.target].name}`, 'war', state.entities[war.target].capitalPos.x, state.entities[war.target].capitalPos.y);
                         }
                         // Update UI if diplomacy modal is open for this target
                         if (state.activeDiploIdx === war.target) {
@@ -2609,7 +2612,11 @@
                     // Paralysis handling
                     if (state.cycleTimer === 0 && bot.paralyzedCycles > 0) {
                         bot.paralyzedCycles--;
-                        if (bot.paralyzedCycles === 0) notify(`${bot.name} is no longer paralyzed.`, 'info');
+                        if (bot.paralyzedCycles === 0) {
+                            const cx = bot.capitalPos ? bot.capitalPos.x : -1;
+                            const cy = bot.capitalPos ? bot.capitalPos.y : -1;
+                            notify(`${bot.name} is no longer paralyzed.`, 'info', cx !== -1 ? cx : null, cy !== -1 ? cy : null);
+                        }
                     }
                     if (bot.paralyzedCycles > 0) continue; // Paralyzed bots skip everything
 
@@ -2744,7 +2751,7 @@
         requestAnimationFrame(gameLoop);
         }
 
-        function notify(msg, type = 'info') {
+        function notify(msg, type = 'info', x = null, y = null) {
             const container = document.getElementById('notifications');
             const toast = document.createElement('div');
             const colors = {
@@ -2755,8 +2762,19 @@
             };
             
             toast.className = `${colors[type]} px-6 py-3 rounded-2xl border backdrop-blur-xl shadow-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-3 transform translate-x-full transition-all duration-300 pointer-events-auto cursor-pointer`;
-            toast.innerHTML = `<span>${type === 'war' ? '⚠️' : '🔔'}</span> ${msg}`;
+            toast.innerHTML = `<span>${type === 'war' ? '⚠️' : '🔔'}</span> <div class="flex-1">${msg}</div>`;
             
+            if (x !== null && y !== null) {
+                const locateBtn = document.createElement('button');
+                locateBtn.className = "bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg border border-white/20 transition-all active:scale-95 font-bold text-[8px]";
+                locateBtn.innerText = "LOCATE";
+                locateBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    centerCameraOn(x, y);
+                };
+                toast.appendChild(locateBtn);
+            }
+
             container.appendChild(toast);
             setTimeout(() => toast.style.transform = 'translateX(0)', 10);
             
