@@ -2017,15 +2017,18 @@
                     const botIncome = bot.ownedCount + (bot.balance * botRate) + (bot.cityCount * CONFIG.CITY_BONUS) + CONFIG.CAPITAL_BONUS + (bot.damCount * CONFIG.DAM_BONUS);
                     bot.balance = Math.min(botMaxBalance, bot.balance + botIncome);
 
-                    // Bots expand on cycle 0
-                    if (state.cycleTimer === 0) {
-                        bot.balance = Math.min(botMaxBalance, bot.balance + botIncome + (bot.ownedCount * 2));
+                    // Bots expand on cycle 0 (or every tick for Insane)
+                    const isInsane = bot.difficulty === 'insane';
+                    if (state.cycleTimer === 0 || isInsane) {
+                        if (state.cycleTimer === 0) {
+                            bot.balance = Math.min(botMaxBalance, bot.balance + botIncome + (bot.ownedCount * 2));
+                        }
                         
                         const difficulty = bot.difficulty || 'ez';
                         let expandCount = 3;
                         if (difficulty === 'strategic') expandCount = 5;
                         else if (difficulty === 'hard') expandCount = 8;
-                        else if (difficulty === 'insane') expandCount = 12;
+                        else if (difficulty === 'insane') expandCount = 4; // Lower per-tick for performance, but higher overall
 
                         const owned = [];
                         for(let t=0; t<state.tileTypes.length; t++) if(state.tileOwners[t] === i && (state.tileFlags[t] & 16)) owned.push(t);
@@ -2053,8 +2056,8 @@
                             }
                         }
 
-                        // Bot Economy: Cities
-                        if (bot.balance >= 1000 && bot.cityCount < 5) {
+                        // Bot Economy: Cities (Only on cycle 0 to avoid city spam)
+                        if (state.cycleTimer === 0 && bot.balance >= 1000 && bot.cityCount < 5) {
                             // Find a random internal owned land tile
                             const internal = [];
                             for(let t=0; t<state.tileTypes.length; t++) if(state.tileOwners[t] === i && !(state.tileFlags[t] & 16) && state.tileTypes[t] === 2) internal.push(t);
@@ -2150,18 +2153,23 @@
             const listEl = document.getElementById('leaderboard-list');
             if (!listEl) return;
 
-            // Update OVCD for all entities
+            // Reset OVCD for a fresh calculation pass
+            state.entities.forEach(e => e.tempTotalLevel = 0);
+            const cityCounts = new Uint8Array(state.entities.length);
+
+            // One-pass calculation for all city-related stats
+            state.cityIndices.forEach(idx => {
+                const owner = state.tileOwners[idx];
+                if (owner > 0) {
+                    state.entities[owner].tempTotalLevel += state.cityLevels[idx] || 0;
+                    cityCounts[owner]++;
+                }
+            });
+
+            // Update final OVCD values
             state.entities.forEach((entity, eIdx) => {
-                if (eIdx === 0) return; // Skip WILD
-                let totalLevel = 0;
-                let entityCities = 0;
-                state.cityIndices.forEach(idx => {
-                    if (state.tileOwners[idx] === eIdx) {
-                        totalLevel += state.cityLevels[idx] || 0;
-                        entityCities++;
-                    }
-                });
-                entity.ovcd = entityCities > 0 ? (totalLevel / entityCities).toFixed(1) : 0;
+                if (eIdx === 0) return;
+                entity.ovcd = cityCounts[eIdx] > 0 ? parseFloat((entity.tempTotalLevel / cityCounts[eIdx]).toFixed(1)) : 0;
             });
 
             // Prepare list of entities (excluding WILD)
@@ -2183,7 +2191,7 @@
                         if (activeWar) cost *= 100;
                         value = Math.floor(cost); suffix = ''; break;
                 }
-                return { name: e.name, color: e.color, value, suffix, id: e.id, isPlayer: e.type === 'player' };
+                return { name: e.name, color: e.color, value: Number(value), suffix, id: e.id, isPlayer: e.type === 'player' };
             });
 
             // Sort by value descending
