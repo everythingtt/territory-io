@@ -1656,18 +1656,18 @@
                 return isDirect || isAllyOfHost || isAllyOfTarget;
             });
 
-            // Find if a teammate or ally is at war with this entity
-            const existingWarWithTarget = state.wars.find(w => w.active && (w.host === entityIdx || w.target === entityIdx || w.allies.includes(entityIdx)));
-            const teammateAtWarWithTarget = existingWarWithTarget && (
-                (state.entities[existingWarWithTarget.host].teamId !== undefined && state.entities[existingWarWithTarget.host].teamId === playerEntity.teamId) ||
-                (state.entities[existingWarWithTarget.target].teamId !== undefined && state.entities[existingWarWithTarget.target].teamId === playerEntity.teamId) ||
-                existingWarWithTarget.allies.some(aIdx => state.entities[aIdx].teamId !== undefined && state.entities[aIdx].teamId === playerEntity.teamId) ||
-                state.alliances.has(`1-${existingWarWithTarget.host}`) || state.alliances.has(`${existingWarWithTarget.host}-1`)
-            );
+            // Find any war involving the target
+            const targetWar = state.wars.find(w => w.host === entityIdx || w.target === entityIdx || w.allies.includes(entityIdx));
+            const playerInAnyWar = state.wars.some(w => w.host === 1 || w.target === 1 || w.allies.includes(1));
 
             const btnWar = document.getElementById('btn-declare-war');
             const progress = document.getElementById('justification-progress');
             
+            // Reset button to default state
+            btnWar.onclick = () => startJustification();
+            btnWar.disabled = false;
+            btnWar.classList.remove('hidden');
+
             if (isTeammate) {
                 btnWar.classList.add('hidden');
                 progress.classList.add('hidden');
@@ -1677,34 +1677,39 @@
                     statusEl.className = 'text-xs text-red-500 font-bold uppercase mt-1';
                     btnWar.innerText = '⚔️ AT WAR';
                     btnWar.disabled = true;
+                    btnWar.className = 'w-full bg-slate-700 py-3 rounded-xl font-bold text-slate-500 text-xs uppercase cursor-not-allowed';
                     progress.classList.add('hidden');
                 } else {
                     btnWar.classList.add('hidden');
                     progress.classList.remove('hidden');
                 }
-            } else if (teammateAtWarWithTarget && !state.wars.some(w => w.host === 1 || w.target === 1 || w.allies.includes(1))) {
-                // If teammate/ally is at war with this entity and player is NOT in ANY war, show JOIN WAR
-                btnWar.classList.remove('hidden');
-                btnWar.innerText = '🤝 JOIN WAR';
-                btnWar.disabled = false;
-                btnWar.className = 'w-full bg-blue-600 hover:bg-blue-700 py-3 rounded-xl font-bold text-white text-xs uppercase transition-colors';
-                btnWar.onclick = () => requestJoinWar(existingWarWithTarget.id);
-                progress.classList.add('hidden');
-            } else {
-                // Check if player is involved in ANY other war
-                const playerInAnyWar = state.wars.some(w => w.host === 1 || w.target === 1 || w.allies.includes(1));
+            } else if (targetWar) {
+                const hostEntity = state.entities[targetWar.host];
+                const targetEntity = state.entities[targetWar.target];
+                const isHostAlly = state.alliances.has(`1-${targetWar.host}`) || state.alliances.has(`${targetWar.host}-1`) || 
+                                 (playerEntity.teamId !== undefined && playerEntity.teamId === hostEntity.teamId);
                 
-                btnWar.classList.remove('hidden');
-                btnWar.onclick = () => startJustification(); // Reset to default
-                if (playerInAnyWar) {
-                    btnWar.innerText = '⚔️ ALREADY AT WAR';
+                statusEl.innerText = `Status: In War (${hostEntity.name} vs ${targetEntity.name})`;
+                statusEl.className = 'text-xs text-amber-500 font-bold uppercase mt-1';
+
+                if (isHostAlly && !playerInAnyWar && targetWar.active) {
+                    btnWar.innerText = `🤝 JOIN ${hostEntity.name.toUpperCase()}`;
+                    btnWar.className = 'w-full bg-blue-600 hover:bg-blue-700 py-3 rounded-xl font-bold text-white text-xs uppercase transition-colors';
+                    btnWar.onclick = () => requestJoinWar(targetWar.id);
+                } else {
+                    btnWar.innerText = '⚔️ TARGET ALREADY AT WAR';
                     btnWar.disabled = true;
                     btnWar.className = 'w-full bg-slate-700 py-3 rounded-xl font-bold text-slate-500 text-xs uppercase cursor-not-allowed';
-                } else {
-                    btnWar.innerText = '⚔️ DECLARE WAR';
-                    btnWar.disabled = false;
-                    btnWar.className = 'w-full bg-red-600 hover:bg-red-700 py-3 rounded-xl font-bold text-white text-xs uppercase transition-colors';
                 }
+                progress.classList.add('hidden');
+            } else if (playerInAnyWar) {
+                btnWar.innerText = '⚔️ ALREADY AT WAR';
+                btnWar.disabled = true;
+                btnWar.className = 'w-full bg-slate-700 py-3 rounded-xl font-bold text-slate-500 text-xs uppercase cursor-not-allowed';
+                progress.classList.add('hidden');
+            } else {
+                btnWar.innerText = '⚔️ DECLARE WAR';
+                btnWar.className = 'w-full bg-red-600 hover:bg-red-700 py-3 rounded-xl font-bold text-white text-xs uppercase transition-colors';
                 progress.classList.add('hidden');
             }
 
