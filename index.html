@@ -3080,20 +3080,52 @@
                 notify(`You have left the war via White Peace.`, 'success');
                 
                 // Revert only tiles captured by the player
-                const playerCaptures = war.capturedByHost.filter(c => state.tileOwners[c.idx] === 1);
-                playerCaptures.forEach(c => {
+                // These are tiles in war.capturedByHost that are currently owned by the player (1)
+                const playerCapturesFromTarget = war.capturedByHost.filter(c => state.tileOwners[c.idx] === 1);
+                playerCapturesFromTarget.forEach(c => {
                     const x = c.idx % CONFIG.COLS, y = Math.floor(c.idx / CONFIG.COLS);
-                    state.tileOwners[c.idx] = c.originalOwner;
-                    // Update stats
+                    const originalOwner = c.originalOwner;
+                    
+                    // Update current owner (player) stats
                     state.entities[1].ownedCount--;
-                    state.ownedCount--;
-                    state.entities[c.originalOwner].ownedCount++;
+                    state.ownedCount--; // Sync global state.ownedCount for player
+                    
+                    // Restore original owner stats
+                    if (state.entities[originalOwner]) {
+                        state.entities[originalOwner].ownedCount++;
+                        if (originalOwner === 1) state.ownedCount++; // Sync global state.ownedCount if player is original owner
+                    }
+                    
+                    // Set ownership back to original
+                    state.tileOwners[c.idx] = originalOwner;
+                    
+                    updateTileBorder(x, y);
+                    drawTile(x, y);
+                });
+
+                // Also check if the player (as ally) lost any tiles to the target (war.capturedByTarget)
+                // and restore them if they were originally owned by the player.
+                const playerLossesToTarget = war.capturedByTarget.filter(c => c.originalOwner === 1 && state.tileOwners[c.idx] === war.target);
+                playerLossesToTarget.forEach(c => {
+                    const x = c.idx % CONFIG.COLS, y = Math.floor(c.idx / CONFIG.COLS);
+                    
+                    // Update current owner (target) stats
+                    state.entities[war.target].ownedCount--;
+                    
+                    // Restore player stats
+                    state.entities[1].ownedCount++;
+                    state.ownedCount++; // Sync global state.ownedCount for player
+                    
+                    // Set ownership back to player
+                    state.tileOwners[c.idx] = 1;
+                    
                     updateTileBorder(x, y);
                     drawTile(x, y);
                 });
                 
-                // Remove player captures from the war record
-                war.capturedByHost = war.capturedByHost.filter(c => state.tileOwners[c.idx] !== 1);
+                // Clean up the war records: remove any mention of tiles that were originally player's or captured by player
+                war.capturedByHost = war.capturedByHost.filter(c => state.tileOwners[c.idx] !== 1 && c.originalOwner !== 1);
+                war.capturedByTarget = war.capturedByTarget.filter(c => state.tileOwners[c.idx] !== 1 && c.originalOwner !== 1);
                 
                 // Remove player from allies
                 war.allies = war.allies.filter(a => a !== 1);
@@ -3130,7 +3162,22 @@
                 // Revert Host Captures
                 war.capturedByHost.forEach(c => {
                     const x = c.idx % CONFIG.COLS, y = Math.floor(c.idx / CONFIG.COLS);
-                    state.tileOwners[c.idx] = c.originalOwner;
+                    const currentOwner = state.tileOwners[c.idx];
+                    const originalOwner = c.originalOwner;
+
+                    // Update current owner stats
+                    if (state.entities[currentOwner]) {
+                        state.entities[currentOwner].ownedCount--;
+                        if (currentOwner === 1) state.ownedCount--;
+                    }
+
+                    // Restore original owner stats
+                    if (state.entities[originalOwner]) {
+                        state.entities[originalOwner].ownedCount++;
+                        if (originalOwner === 1) state.ownedCount++;
+                    }
+
+                    state.tileOwners[c.idx] = originalOwner;
                     updateTileBorder(x, y);
                     drawTile(x, y);
                 });
@@ -3138,7 +3185,22 @@
                 // Revert Target Captures
                 war.capturedByTarget.forEach(c => {
                     const x = c.idx % CONFIG.COLS, y = Math.floor(c.idx / CONFIG.COLS);
-                    state.tileOwners[c.idx] = c.originalOwner;
+                    const currentOwner = state.tileOwners[c.idx];
+                    const originalOwner = c.originalOwner;
+
+                    // Update current owner stats
+                    if (state.entities[currentOwner]) {
+                        state.entities[currentOwner].ownedCount--;
+                        if (currentOwner === 1) state.ownedCount--;
+                    }
+
+                    // Restore original owner stats
+                    if (state.entities[originalOwner]) {
+                        state.entities[originalOwner].ownedCount++;
+                        if (originalOwner === 1) state.ownedCount++;
+                    }
+
+                    state.tileOwners[c.idx] = originalOwner;
                     updateTileBorder(x, y);
                     drawTile(x, y);
                 });
