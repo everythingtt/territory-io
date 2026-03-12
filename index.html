@@ -2215,25 +2215,33 @@
                         if (activeWar) cost *= 100;
                         value = Math.floor(cost); suffix = ''; break;
                 }
-                return { name: e.name, color: e.color, value: Number(value), suffix, id: e.id, isPlayer: e.type === 'player' };
+                return { name: e.name, color: e.color, value: Number(value), suffix, id: e.id, isPlayer: e.type === 'player', ownedCount: e.ownedCount };
+            });
+
+            // Find the leader by territory size (ownedCount)
+            let maxTiles = 0;
+            leaderboardData.forEach(item => {
+                if (item.ownedCount > maxTiles) maxTiles = item.ownedCount;
             });
 
             // Sort by value descending
             leaderboardData.sort((a, b) => b.value - a.value);
 
             // Render
-            listEl.innerHTML = leaderboardData.map((item, index) => `
+            listEl.innerHTML = leaderboardData.map((item, index) => {
+                const isLeader = maxTiles > 0 && item.ownedCount === maxTiles;
+                return `
                 <div class="flex justify-between items-center bg-slate-800/30 p-2 rounded-lg border border-white/5 ${item.isPlayer ? 'ring-1 ring-blue-500/50 bg-blue-500/10' : ''}">
                     <div class="flex items-center gap-2 overflow-hidden">
                         <span class="text-[8px] font-black text-slate-500 w-3">${index + 1}</span>
                         <div class="w-1.5 h-1.5 rounded-full" style="background-color: ${item.color}"></div>
-                        <span class="text-[9px] font-bold text-white truncate max-w-[80px]">${item.name}</span>
+                        <span class="text-[9px] font-bold text-white truncate max-w-[80px]">${item.name} ${isLeader ? '👑' : ''}</span>
                     </div>
                     <div class="text-[9px] font-mono font-black ${item.isPlayer ? 'text-blue-400' : 'text-slate-400'}">
                         ${state.leaderboardMode === 'balance' || state.leaderboardMode === 'cost' ? '$' : ''}${Number(item.value).toLocaleString()}${item.suffix}
                     </div>
                 </div>
-            `).join('');
+            `;}).join('');
         }
 
         function rebuildCapital() {
