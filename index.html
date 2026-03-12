@@ -1579,11 +1579,23 @@
                 const type = state.tileTypes[idx];
                 const war = state.wars.find(w => w.id === state.planning.warId);
                 
-                // Block selecting dam water (type 4) - only allow land, bridges, cities
+                // Allow selecting enemy tiles (except dam water) if within range or reachable
                 if (ownerIdx === war.target && type !== 4 && !state.planning.turns[state.planning.activeTurn].includes(idx)) {
-                    state.planning.turns[state.planning.activeTurn].push(idx);
-                    updateTurnCount();
-                    drawTile(x, y); // Highlight immediately
+                    // Check distance from capital for Air Support
+                    const cx = state.entities[1].capitalPos.x, cy = state.entities[1].capitalPos.y;
+                    const dist = Math.sqrt(Math.pow(x - cx, 2) + Math.pow(y - cy, 2));
+                    
+                    // Check if reachable via border
+                    const neighbors = [idx-1, idx+1, idx-CONFIG.COLS, idx+CONFIG.COLS];
+                    const isReachable = neighbors.some(n => n >= 0 && n < state.tileTypes.length && (state.tileOwners[n] === 1 || state.alliances.has(`1-${state.tileOwners[n]}`) || state.alliances.has(`${state.tileOwners[n]}-1`)));
+
+                    if (isReachable || dist <= 200) {
+                        state.planning.turns[state.planning.activeTurn].push(idx);
+                        updateTurnCount();
+                        drawTile(x, y); // Highlight immediately
+                    } else {
+                        notify("Target too far for Air Support (Max 200 tiles)!", "error");
+                    }
                 }
             } else if (state.mode === 'paint') {
                 closeDonutMenu();
@@ -1871,9 +1883,18 @@
             const playerEntity = state.entities[1];
             state.planning.turns.forEach(turn => {
                 turn.forEach(idx => {
+                    const neighbors = [idx-1, idx+1, idx-CONFIG.COLS, idx+CONFIG.COLS];
+                    const isReachable = neighbors.some(n => n >= 0 && n < state.tileTypes.length && (state.tileOwners[n] === 1 || state.alliances.has(`1-${state.tileOwners[n]}`) || state.alliances.has(`${state.tileOwners[n]}-1`)));
+                    
                     const isWater = state.tileTypes[idx] === 0;
-                    const cost = isWater ? (playerEntity.tileCost * CONFIG.BRIDGE_MULTIPLIER) : playerEntity.tileCost;
-                    totalCost += cost * warMultiplier;
+                    let baseCost = isWater ? (playerEntity.tileCost * CONFIG.BRIDGE_MULTIPLIER) : playerEntity.tileCost;
+                    
+                    // If not reachable via border, it uses Air Support (100x transport cost)
+                    if (!isReachable) {
+                        baseCost = CONFIG.TRANSPORT_COST * 100;
+                    }
+
+                    totalCost += baseCost * warMultiplier;
                 });
             });
 
@@ -1932,9 +1953,16 @@
             const playerEntity = state.entities[1];
             state.planning.turns.forEach(turn => {
                 turn.forEach(idx => {
+                    const neighbors = [idx-1, idx+1, idx-CONFIG.COLS, idx+CONFIG.COLS];
+                    const isReachable = neighbors.some(n => n >= 0 && n < state.tileTypes.length && (state.tileOwners[n] === 1 || state.alliances.has(`1-${state.tileOwners[n]}`) || state.alliances.has(`${state.tileOwners[n]}-1`)));
+                    
                     const isWater = state.tileTypes[idx] === 0;
-                    const cost = isWater ? (playerEntity.tileCost * CONFIG.BRIDGE_MULTIPLIER) : playerEntity.tileCost;
-                    totalCost += cost * warMultiplier;
+                    let baseCost = isWater ? (playerEntity.tileCost * CONFIG.BRIDGE_MULTIPLIER) : playerEntity.tileCost;
+                    
+                    if (!isReachable) {
+                        baseCost = CONFIG.TRANSPORT_COST * 100;
+                    }
+                    totalCost += baseCost * warMultiplier;
                 });
             });
 
@@ -1970,9 +1998,16 @@
                 // Per-turn balance check
                 let turnCost = 0;
                 tiles.forEach(idx => {
+                    const neighbors = [idx-1, idx+1, idx-CONFIG.COLS, idx+CONFIG.COLS];
+                    const isReachable = neighbors.some(n => n >= 0 && n < state.tileTypes.length && (state.tileOwners[n] === 1 || state.alliances.has(`1-${state.tileOwners[n]}`) || state.alliances.has(`${state.tileOwners[n]}-1`)));
+                    
                     const isWater = state.tileTypes[idx] === 0;
-                    const cost = isWater ? (playerEntity.tileCost * CONFIG.BRIDGE_MULTIPLIER) : playerEntity.tileCost;
-                    turnCost += cost * warMultiplier;
+                    let baseCost = isWater ? (playerEntity.tileCost * CONFIG.BRIDGE_MULTIPLIER) : playerEntity.tileCost;
+                    
+                    if (!isReachable) {
+                        baseCost = CONFIG.TRANSPORT_COST * 100;
+                    }
+                    turnCost += baseCost * warMultiplier;
                 });
 
                 if (state.balance < turnCost) {
@@ -1988,18 +2023,52 @@
                     
                     // Claim for player if still owned by enemy (target or ally of target)
                     if (oldOwner === activeWar.target || activeWar.allies.includes(oldOwner)) {
-                        claim(x, y, true, 1); // free=true because we handle cost here to ensure atomic turn execution
-                        state.balance -= (state.tileTypes[idx] === 3 ? (playerEntity.tileCost * CONFIG.BRIDGE_MULTIPLIER) : playerEntity.tileCost) * warMultiplier;
-                        state.entities[1].balance = state.balance; // Keep in sync
-                        playerEntity.tileCost += 0.25; // Increment cost per tile in assault
+                        const neighbors = [idx-1, idx+1, idx-CONFIG.COLS, idx+CONFIG.COLS];
+                        const isReachable = neighbors.some(n => n >= 0 && n < state.tileTypes.length && (state.tileOwners[n] === 1 || state.alliances.has(`1-${state.tileOwners[n]}`) || state.alliances.has(`${state.tileOwners[n]}-1`)));
+                        
+                        let actualCost = (state.tileTypes[idx] === 3 ? (playerEntity.tileCost * CONFIG.BRIDGE_MULTIPLIER) : playerEntity.tileCost) * warMultiplier;
+                        if (!isReachable) {
+                            actualCost = (CONFIG.TRANSPORT_COST * 100) * warMultiplier;
+                            // Air Support Visual
+                            const plane = document.createElement('div');
+                            plane.className = 'plane'; plane.innerText = '🚀';
+                            plane.style.left = `${state.entities[1].capitalPos.x * CONFIG.TILE_SIZE}px`;
+                            plane.style.top = `${state.entities[1].capitalPos.y * CONFIG.TILE_SIZE}px`;
+                            container.appendChild(plane);
+                            setTimeout(() => { plane.style.left = `${x * CONFIG.TILE_SIZE}px`; plane.style.top = `${y * CONFIG.TILE_SIZE}px`; }, 50);
+                            setTimeout(() => plane.remove(), 1000);
+                        }
+
+                        claim(x, y, true, 1); 
+                        state.balance -= actualCost;
+                        state.entities[1].balance = state.balance; 
+                        playerEntity.tileCost += 0.25; 
                         
                         // Track losses
                         activeWar.losses.target.tiles++;
                         if (type === 5) activeWar.losses.target.cities++;
                         if (type === 6) { // Capital conquered
-                            state.entities[oldOwner].hasCapital = false;
-                            state.entities[oldOwner].capitalPos = null;
+                            // Boom Effect
+                            const boom = document.createElement('div');
+                            boom.className = 'bonus-popup'; boom.style.color = '#ef4444'; boom.style.fontSize = '24px';
+                            boom.innerText = '💥 BOOM!';
+                            boom.style.left = `${x * CONFIG.TILE_SIZE}px`;
+                            boom.style.top = `${y * CONFIG.TILE_SIZE}px`;
+                            container.appendChild(boom);
+                            setTimeout(() => boom.remove(), 1000);
+
+                            const enemy = state.entities[oldOwner];
+                            enemy.hasCapital = false;
+                            enemy.capitalPos = null;
+                            enemy.paralyzedCycles = 15;
+                            notify(`${enemy.name}'s Capital has been DESTROYED! They are paralyzed!`, 'war');
+
                             state.tileTypes[idx] = 2; // Turn into regular land
+                            // Remove label
+                            const labels = document.querySelectorAll('.capital-label');
+                            labels.forEach(l => {
+                                if (l.innerText === enemy.name.toUpperCase()) l.remove();
+                            });
                             drawTile(x, y);
                         }
                     }
@@ -2026,20 +2095,32 @@
             else if (diff === 'hard') { turnCount = 7; tilesPerTurn = 12; focusOnCities = true; }
             else if (diff === 'insane') { turnCount = 10; tilesPerTurn = 20; focusOnCities = true; }
 
-            // Find valid target tiles (bordering or near bot)
+            // Find valid target tiles (bordering or strategic targets for Air Support)
             const targetIndices = [];
+            const cx = bot.capitalPos ? bot.capitalPos.x : -1, cy = bot.capitalPos ? bot.capitalPos.y : -1;
+
             for (let i = 0; i < state.tileOwners.length; i++) {
                 if (state.tileOwners[i] === war.target) {
-                    // Check if neighbors any of bot's or bot's allies tiles
                     const x = i % CONFIG.COLS, y = Math.floor(i / CONFIG.COLS);
                     const neighbors = [{x:x+1,y:0},{x:x-1,y:0},{x:0,y:y+1},{x:0,y:y-1}];
-                    const isReachable = neighbors.some(n => {
+                    
+                    // Reachable via border
+                    const isBordering = neighbors.some(n => {
                         const nx = x + n.x, ny = y + n.y;
                         if (nx < 0 || nx >= CONFIG.COLS || ny < 0 || ny >= CONFIG.ROWS) return false;
                         const owner = state.tileOwners[ny * CONFIG.COLS + nx];
                         return owner === war.host || war.allies.includes(owner);
                     });
-                    if (isReachable) targetIndices.push(i);
+
+                    // Strategic targets via Air Support (Cities/Capitals within 200 range)
+                    const type = state.tileTypes[i];
+                    let isAirSupportTarget = false;
+                    if (cx !== -1 && (type === 5 || type === 6)) {
+                        const dist = Math.sqrt(Math.pow(x - cx, 2) + Math.pow(y - cy, 2));
+                        if (dist <= 200) isAirSupportTarget = true;
+                    }
+
+                    if (isBordering || isAirSupportTarget) targetIndices.push(i);
                 }
             }
 
@@ -2050,27 +2131,67 @@
             const executeTurn = () => {
                 if (currentTurn >= turnCount || !war.active) return;
                 
-                // Pick random targets from reachable list
+                // Pick targets (prioritize cities/capitals for higher difficulties)
                 const batch = [];
+                const sortedTargets = [...targetIndices].sort((a, b) => {
+                    const typeA = state.tileTypes[a], typeB = state.tileTypes[b];
+                    if (focusOnCities) {
+                        if (typeA === 6 || typeB === 6) return typeB === 6 ? 1 : -1;
+                        if (typeA === 5 || typeB === 5) return typeB === 5 ? 1 : -1;
+                    }
+                    return Math.random() - 0.5;
+                });
+
                 for (let i = 0; i < tilesPerTurn; i++) {
-                    if (targetIndices.length === 0) break;
-                    const randIdx = Math.floor(Math.random() * targetIndices.length);
-                    batch.push(targetIndices.splice(randIdx, 1)[0]);
+                    if (sortedTargets.length === 0) break;
+                    batch.push(sortedTargets.shift());
                 }
 
                 batch.forEach(idx => {
                     const tx = idx % CONFIG.COLS, ty = Math.floor(idx / CONFIG.COLS);
                     const type = state.tileTypes[idx];
                     
-                    // Bots get free claims during assault (economy handled separately)
+                    const neighbors = [idx-1, idx+1, idx-CONFIG.COLS, idx+CONFIG.COLS];
+                    const isBordering = neighbors.some(n => n >= 0 && n < state.tileTypes.length && (state.tileOwners[n] === war.host || war.allies.includes(state.tileOwners[n])));
+
+                    if (!isBordering && cx !== -1) {
+                        // Air Support Visual for Bot
+                        const plane = document.createElement('div');
+                        plane.className = 'plane'; plane.innerText = '🚀';
+                        plane.style.left = `${cx * CONFIG.TILE_SIZE}px`;
+                        plane.style.top = `${cy * CONFIG.TILE_SIZE}px`;
+                        container.appendChild(plane);
+                        setTimeout(() => { plane.style.left = `${tx * CONFIG.TILE_SIZE}px`; plane.style.top = `${ty * CONFIG.TILE_SIZE}px`; }, 50);
+                        setTimeout(() => plane.remove(), 1000);
+                    }
+
+                    // Bots get free claims during assault
                     claim(tx, ty, true, war.host);
                     
                     war.losses.target.tiles++;
                     if (type === 5) war.losses.target.cities++;
                     if (type === 6) {
-                        state.entities[war.target].hasCapital = false;
-                        state.entities[war.target].capitalPos = null;
+                        // Boom Effect
+                        const boom = document.createElement('div');
+                        boom.className = 'bonus-popup'; boom.style.color = '#ef4444'; boom.style.fontSize = '24px';
+                        boom.innerText = '💥 BOOM!';
+                        boom.style.left = `${tx * CONFIG.TILE_SIZE}px`;
+                        boom.style.top = `${ty * CONFIG.TILE_SIZE}px`;
+                        container.appendChild(boom);
+                        setTimeout(() => boom.remove(), 1000);
+
+                        const enemy = state.entities[war.target];
+                        enemy.hasCapital = false;
+                        enemy.capitalPos = null;
+                        enemy.paralyzedCycles = 15;
+                        notify(`${enemy.name}'s Capital has been DESTROYED by ${bot.name}!`, 'war');
+
                         state.tileTypes[idx] = 2;
+                        // Remove label
+                        const labels = document.querySelectorAll('.capital-label');
+                        labels.forEach(l => {
+                            if (l.innerText === enemy.name.toUpperCase()) l.remove();
+                        });
                         drawTile(tx, ty);
                     }
                 });
@@ -2179,17 +2300,90 @@
         }
 
         function sendTransport(targetIdx) {
-            if (state.balance < CONFIG.TRANSPORT_COST) return;
+            const playerActiveWar = state.wars.find(w => w.active && (w.host === 1 || w.allies.includes(1)));
+            const isWar = !!playerActiveWar;
+            const cost = isWar ? CONFIG.TRANSPORT_COST * 100 : CONFIG.TRANSPORT_COST;
+            
+            if (state.balance < cost) {
+                notify(`Insufficient balance for ${isWar ? 'Air Support' : 'Transport'}`, 'error');
+                return;
+            }
+
+            // Launch from capital
+            if (!state.entities[1].hasCapital) {
+                notify("You must have a capital to launch Air Support/Transport!", "error");
+                return;
+            }
+
             const tx = targetIdx % CONFIG.COLS, ty = Math.floor(targetIdx / CONFIG.COLS);
-            if (state.tileTypes[targetIdx] >= 2 || state.tileTypes[targetIdx] === 0) return;
-            state.balance -= CONFIG.TRANSPORT_COST;
+            const cx = state.entities[1].capitalPos.x, cy = state.entities[1].capitalPos.y;
+            
+            // Range check during war
+            if (isWar) {
+                const dist = Math.sqrt(Math.pow(tx - cx, 2) + Math.pow(ty - cy, 2));
+                if (dist > 200) {
+                    notify("Target is out of Air Support range (Max 200 tiles)!", "error");
+                    return;
+                }
+            }
+
+            // Target check: only wild tiles or enemy strategic targets during war
+            const targetType = state.tileTypes[targetIdx];
+            const targetOwner = state.tileOwners[targetIdx];
+            
+            if (!isWar) {
+                if (targetType >= 2 || targetType === 0) return;
+            } else {
+                // In war, can target enemy tiles (except dam water)
+                const isEnemy = targetOwner !== 0 && targetOwner !== 1 && !state.alliances.has(`1-${targetOwner}`) && !state.alliances.has(`${targetOwner}-1`);
+                if (!isEnemy && (targetType >= 2 || targetType === 0)) return;
+                if (targetType === 4) return; // Cannot target dam water
+            }
+
+            state.balance -= cost;
+            state.entities[1].balance = state.balance;
+            
             const plane = document.createElement('div');
-            plane.className = 'plane'; plane.innerText = '✈️';
-            plane.style.left = `${state.capitalPos.x * CONFIG.TILE_SIZE}px`;
-            plane.style.top = `${state.capitalPos.y * CONFIG.TILE_SIZE}px`;
+            plane.className = 'plane'; 
+            plane.innerText = isWar ? '🚀' : '✈️';
+            plane.style.left = `${cx * CONFIG.TILE_SIZE}px`;
+            plane.style.top = `${cy * CONFIG.TILE_SIZE}px`;
             container.appendChild(plane);
+            
             setTimeout(() => { plane.style.left = `${tx * CONFIG.TILE_SIZE}px`; plane.style.top = `${ty * CONFIG.TILE_SIZE}px`; }, 50);
-            setTimeout(() => { claim(tx, ty, true); plane.remove(); }, 2000);
+            
+            setTimeout(() => { 
+                if (isWar && (targetType === 5 || targetType === 6)) {
+                    // Strategic Strike: "Boom" effect
+                    const boom = document.createElement('div');
+                    boom.className = 'bonus-popup'; boom.style.color = '#ef4444'; boom.style.fontSize = '24px';
+                    boom.innerText = '💥 BOOM!';
+                    boom.style.left = `${tx * CONFIG.TILE_SIZE}px`;
+                    boom.style.top = `${ty * CONFIG.TILE_SIZE}px`;
+                    container.appendChild(boom);
+                    setTimeout(() => boom.remove(), 1000);
+
+                    if (targetType === 6) {
+                        // Destroy Capital
+                        const enemy = state.entities[targetOwner];
+                        enemy.hasCapital = false;
+                        enemy.capitalPos = null;
+                        enemy.paralyzedCycles = 15; // Paralyzed for 15 cycles
+                        notify(`${enemy.name}'s Capital has been DESTROYED! They are paralyzed!`, 'war');
+                        
+                        // Make it disappear
+                        state.tileTypes[targetIdx] = 2; // Revert to claimed land
+                        // Remove label
+                        const labels = document.querySelectorAll('.capital-label');
+                        labels.forEach(l => {
+                            if (l.innerText === enemy.name.toUpperCase()) l.remove();
+                        });
+                    }
+                }
+                
+                claim(tx, ty, true, 1); 
+                plane.remove(); 
+            }, 2000);
         }
 
         function gameLoop(timestamp) {
@@ -2327,6 +2521,13 @@
                 state.balance = Math.min(maxBalance, state.balance + income + devBonus + globalDevBonus);
                 state.entities[1].balance = state.balance; // Keep in sync
                 state.cycleTimer++;
+
+                // Player Paralysis Check
+                if (state.cycleTimer === 10 && state.entities[1].paralyzedCycles > 0) {
+                    state.entities[1].paralyzedCycles--;
+                    if (state.entities[1].paralyzedCycles === 0) notify("You are no longer paralyzed!", "success");
+                }
+
                 if (state.cycleTimer >= CONFIG.CYCLE) {
                     const bonus = income + (state.ownedCount * 2);
                     state.balance = Math.min(maxBalance, state.balance + bonus);
@@ -2340,6 +2541,13 @@
                 for (let i = 2; i < state.entities.length; i++) {
                     const bot = state.entities[i];
                     if (bot.ownedCount === 0) continue;
+
+                    // Paralysis handling
+                    if (state.cycleTimer === 0 && bot.paralyzedCycles > 0) {
+                        bot.paralyzedCycles--;
+                        if (bot.paralyzedCycles === 0) notify(`${bot.name} is no longer paralyzed.`, 'info');
+                    }
+                    if (bot.paralyzedCycles > 0) continue; // Paralyzed bots skip everything
 
                     // Bot Income
                     const botBaseMax = bot.ownedCount * CONFIG.VAL_PER_TILE;
@@ -2746,6 +2954,22 @@
             document.getElementById('add-ally-modal').classList.add('hidden');
         }
 
+        function hasSharedBorder(entityIdx1, entityIdx2) {
+            for (let i = 0; i < state.tileOwners.length; i++) {
+                if (state.tileOwners[i] === entityIdx1) {
+                    const x = i % CONFIG.COLS, y = Math.floor(i / CONFIG.COLS);
+                    const neighbors = [{x:x+1,y:0},{x:x-1,y:0},{x:0,y:y+1},{x:0,y:y-1}];
+                    for (const n of neighbors) {
+                        const nx = x + n.x, ny = y + n.y;
+                        if (nx >= 0 && nx < CONFIG.COLS && ny >= 0 && ny < CONFIG.ROWS) {
+                            if (state.tileOwners[ny * CONFIG.COLS + nx] === entityIdx2) return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
         function inviteToWar(entityIdx) {
             const war = state.wars.find(w => w.id === state.activeWarId);
             if (!war) return;
@@ -2753,8 +2977,21 @@
             const entity = state.entities[entityIdx];
             closeAddAllyModal();
             
-            // Bots automatically accept
+            // Bots accept based on strategy
             if (entity.type === 'bot') {
+                const sharesBorder = hasSharedBorder(entityIdx, war.target);
+                // If no shared border, 70% chance to refuse
+                if (!sharesBorder && Math.random() < 0.7) {
+                    notify(`${entity.name} refuses to join the war (No shared border with enemy)`, 'error');
+                    // Breaking alliance if not teammates
+                    const player = state.entities[1];
+                    if (entity.teamId === undefined || entity.teamId !== player.teamId) {
+                        state.alliances.delete(`${Math.min(1, entityIdx)}-${Math.max(1, entityIdx)}`);
+                        notify(`Alliance broken with ${entity.name} due to refusal!`, 'error');
+                    }
+                    return;
+                }
+
                 notify(`${entity.name} has joined your war!`, 'success');
                 addAllyToWar(war.id, entityIdx);
             } else {
