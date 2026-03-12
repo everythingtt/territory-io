@@ -85,10 +85,67 @@
 
         .plane {
             position: absolute;
-            font-size: 14px;
+            width: 40px;
+            height: 40px;
             z-index: 100;
             pointer-events: none;
             transition: all 2s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: center;
+        }
+        .rocket-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        #team-pie-container {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 500;
+            display: none;
+            pointer-events: auto;
+        }
+        .team-pie-chart {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: conic-gradient(#334155 0% 100%);
+            border: 4px solid rgba(15, 23, 42, 0.9);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            transition: all 0.5s ease;
+        }
+        .team-legend {
+            position: absolute;
+            left: calc(100% + 15px);
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-blur: xl;
+            padding: 10px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 140px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-[10px] font-bold uppercase tracking-widest;
+        }
+        .legend-color {
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+        }
+        .legend-pct {
+            margin-left: auto;
+            font-family: monospace;
+            color: #94a3b8;
         }
 
         #user-territory-label {
@@ -672,6 +729,11 @@
         </div>
     </div>
 
+    <div id="team-pie-container">
+        <div id="team-pie-chart" class="team-pie-chart"></div>
+        <div id="team-legend" class="team-legend"></div>
+    </div>
+
     <div id="viewport">
         <div id="game-container">
             <div id="game-map"></div>
@@ -766,6 +828,7 @@
             lastTouchX: 0, lastTouchY: 0,
             pendingCityIdx: null,
             activeDonutIdx: null,
+            launchedMissiles: new Set(), // Track indices being targetted to avoid duplicates
             capitalPos: {x: 0, y: 0},
             bounds: { minX: 384, maxX: 0, minY: 216, maxY: 0 }, // Incremental bounding box
             isPC: !('ontouchstart' in window),
@@ -909,13 +972,9 @@
                 };
 
                 if (state.gameMode === 'team') {
-                    const tIdx = Math.floor(Math.random() * 5);
-                    const team = teams[tIdx];
-                    const h = team.colorInfo.range[0] + Math.random() * (team.colorInfo.range[1] - team.colorInfo.range[0]);
-                    playerEntity.color = `hsl(${h}, 70%, 50%)`;
-                    playerEntity.teamId = team.id;
-                    team.members.push(1);
+                    document.getElementById('team-pie-container').style.display = 'block';
                 }
+                
                 state.entities.push(playerEntity);
 
                 // Add Bots
@@ -968,6 +1027,17 @@
                         team.members.push(i);
                     }
                     state.entities.push(botEntity);
+                }
+
+                // Final player team assignment (randomly assign player to a team)
+                if (state.gameMode === 'team') {
+                    const tIdx = Math.floor(Math.random() * 5);
+                    const team = teams[tIdx];
+                    const h = team.colorInfo.range[0] + Math.random() * (team.colorInfo.range[1] - team.colorInfo.range[0]);
+                    state.entities[1].color = `hsl(${h}, 70%, 50%)`;
+                    state.entities[1].teamId = team.id;
+                    team.members.push(1);
+                    state.teams = teams; // Store teams globally
                 }
 
                 // Establish Alliances for Teammates
@@ -2109,11 +2179,41 @@
                         state.entities[1].balance = state.balance; 
                         playerEntity.tileCost += 0.25; 
                         
+                        // Fix: Rocket Visual for player assault
+                        const cx = state.entities[1].capitalPos.x, cy = state.entities[1].capitalPos.y;
+                        const angle = Math.atan2(y - cy, x - cx) * (180 / Math.PI);
+                        const rocket = document.createElement('div');
+                        rocket.className = 'plane';
+                        rocket.innerHTML = `<img src="assets/rocket.gif" class="rocket-img" style="transform: rotate(${angle}deg)">`;
+                        rocket.style.left = `${cx * CONFIG.TILE_SIZE}px`;
+                        rocket.style.top = `${cy * CONFIG.TILE_SIZE}px`;
+                        container.appendChild(rocket);
+                        
+                        const launchSfx = new Audio('assets/fx/launching-missile.mp3');
+                        launchSfx.volume = 0.3;
+                        launchSfx.play().catch(() => {});
+
+                        setTimeout(() => { 
+                            rocket.style.left = `${x * CONFIG.TILE_SIZE}px`; 
+                            rocket.style.top = `${y * CONFIG.TILE_SIZE}px`; 
+                        }, 50);
+                        
+                        setTimeout(() => {
+                            rocket.remove();
+                            if (type === 5 || type === 6) {
+                                createExplosion(x, y);
+                                const explosionSfx = new Audio('assets/fx/explosion_sound.mp3');
+                                explosionSfx.volume = 0.4;
+                                explosionSfx.play().catch(() => {});
+                            }
+                        }, 1000);
+
                         // Track losses
                         activeWar.losses.target.tiles++;
                         if (type === 5) activeWar.losses.target.cities++;
                         if (type === 6) { // Capital conquered
-                            // Boom Effect
+                            // Boom Effect already handled by rocket timeout if we wanted it here, 
+                            // but let's keep the specific capital destruction logic
                             createExplosion(x, y);
 
                             const enemy = state.entities[oldOwner];
@@ -2217,13 +2317,32 @@
                         const dist = Math.sqrt(Math.pow(tx - cx, 2) + Math.pow(ty - cy, 2));
                         if (dist <= 200) {
                             // Air Support Visual for Bot
-                            const plane = document.createElement('div');
-                            plane.className = 'plane'; plane.innerText = '🚀';
-                            plane.style.left = `${cx * CONFIG.TILE_SIZE}px`;
-                            plane.style.top = `${cy * CONFIG.TILE_SIZE}px`;
-                            container.appendChild(plane);
-                            setTimeout(() => { plane.style.left = `${tx * CONFIG.TILE_SIZE}px`; plane.style.top = `${ty * CONFIG.TILE_SIZE}px`; }, 50);
-                            setTimeout(() => plane.remove(), 1000);
+                            const angle = Math.atan2(ty - cy, tx - cx) * (180 / Math.PI);
+                            const rocket = document.createElement('div');
+                            rocket.className = 'plane';
+                            rocket.innerHTML = `<img src="assets/rocket.gif" class="rocket-img" style="transform: rotate(${angle}deg)">`;
+                            rocket.style.left = `${cx * CONFIG.TILE_SIZE}px`;
+                            rocket.style.top = `${cy * CONFIG.TILE_SIZE}px`;
+                            container.appendChild(rocket);
+                            
+                            const launchSfx = new Audio('assets/fx/launching-missile.mp3');
+                            launchSfx.volume = 0.2;
+                            launchSfx.play().catch(() => {});
+
+                            setTimeout(() => { 
+                                rocket.style.left = `${tx * CONFIG.TILE_SIZE}px`; 
+                                rocket.style.top = `${ty * CONFIG.TILE_SIZE}px`; 
+                            }, 50);
+                            
+                            setTimeout(() => {
+                                rocket.remove();
+                                if (type === 5 || type === 6) {
+                                    createExplosion(tx, ty);
+                                    const explosionSfx = new Audio('assets/fx/explosion_sound.mp3');
+                                    explosionSfx.volume = 0.3;
+                                    explosionSfx.play().catch(() => {});
+                                }
+                            }, 1000);
 
                             // Apply Air Support cost to bot
                             const cost = (CONFIG.TRANSPORT_COST * 50) * getWarCostMultiplier(war.host);
@@ -2367,6 +2486,9 @@
             const isWar = !!playerActiveWar;
             const cost = isWar ? CONFIG.TRANSPORT_COST * 50 : CONFIG.TRANSPORT_COST;
             
+            // Fix: Check if a missile is already targetting this tile to avoid spamming
+            if (state.launchedMissiles.has(targetIdx)) return;
+
             if (state.balance < cost) {
                 notify(`Insufficient balance for ${isWar ? 'Air Support' : 'Transport'}`, 'error');
                 return;
@@ -2405,20 +2527,38 @@
 
             state.balance -= cost;
             state.entities[1].balance = state.balance;
+            state.launchedMissiles.add(targetIdx); // Mark as launching
             
             const plane = document.createElement('div');
             plane.className = 'plane'; 
-            plane.innerText = isWar ? '🚀' : '✈️';
+            
+            // Calculate rotation towards target
+            const angle = Math.atan2(ty - cy, tx - cx) * (180 / Math.PI);
+            
+            plane.innerHTML = `<img src="${isWar ? 'assets/rocket.gif' : 'assets/fx/transport.png'}" class="rocket-img" style="transform: rotate(${angle}deg)">`;
             plane.style.left = `${cx * CONFIG.TILE_SIZE}px`;
             plane.style.top = `${cy * CONFIG.TILE_SIZE}px`;
             container.appendChild(plane);
             
+            // Sound Effects
+            if (isWar) {
+                const launchSfx = new Audio('assets/fx/launching-missile.mp3');
+                launchSfx.volume = 0.4;
+                launchSfx.play().catch(() => {});
+            }
+
             setTimeout(() => { plane.style.left = `${tx * CONFIG.TILE_SIZE}px`; plane.style.top = `${ty * CONFIG.TILE_SIZE}px`; }, 50);
             
             setTimeout(() => { 
+                state.launchedMissiles.delete(targetIdx); // Clean up tracking
+
                 if (isWar && (targetType === 5 || targetType === 6)) {
                     // Strategic Strike: "Boom" effect
                     createExplosion(tx, ty);
+                    
+                    const explosionSfx = new Audio('assets/fx/explosion_sound.mp3');
+                    explosionSfx.volume = 0.5;
+                    explosionSfx.play().catch(() => {});
 
                     if (targetType === 6) {
                         // Destroy Capital
@@ -2426,7 +2566,7 @@
                         enemy.hasCapital = false;
                         enemy.capitalPos = null;
                         enemy.paralyzedCycles = 15; // Paralyzed for 15 cycles
-                        notify(`${enemy.name}'s Capital has been DESTROYED! They are paralyzed!`, 'war');
+                        notify(`${enemy.name}'s Capital has been DESTROYED! They are paralyzed!`, 'war', tx, ty);
                         
                         // Make it disappear
                         state.tileTypes[targetIdx] = 2; // Revert to claimed land
@@ -2436,6 +2576,9 @@
                             if (l.innerText === enemy.name.toUpperCase()) l.remove();
                         });
                     }
+                } else if (isWar) {
+                    // Regular tile hit but still play explosion visual
+                    createExplosion(tx, ty);
                 }
                 
                 claim(tx, ty, true, 1); 
@@ -2867,6 +3010,11 @@
                 transportWrapper.className = "text-purple-400";
             }
 
+            // Update Team Pie Chart
+            if (state.gameMode === 'team' && state.teams) {
+                updateTeamPieChart();
+            }
+
             // Update War Panel Icon
             document.getElementById('war-panel-icon').classList.toggle('hidden', !playerActiveWar);
             if (playerActiveWar) {
@@ -2959,6 +3107,47 @@
                     </div>
                 </div>
             `;}).join('');
+        }
+
+        function updateTeamPieChart() {
+            if (!state.teams || state.gameMode !== 'team') return;
+            
+            const totalTiles = state.entities.reduce((sum, e) => sum + (e.ownedCount || 0), 0);
+            if (totalTiles === 0) return;
+
+            const teamStats = state.teams.map(team => {
+                const teamTiles = team.members.reduce((sum, mIdx) => sum + (state.entities[mIdx].ownedCount || 0), 0);
+                const pct = (teamTiles / totalTiles) * 100;
+                return {
+                    id: team.id,
+                    name: team.colorInfo.name,
+                    color: `hsl(${team.colorInfo.base}, 70%, 50%)`,
+                    tiles: teamTiles,
+                    pct: pct
+                };
+            });
+
+            // Sort by percentage descending
+            teamStats.sort((a, b) => b.pct - a.pct);
+
+            // Update Conic Gradient
+            let currentPct = 0;
+            const gradientParts = teamStats.map(team => {
+                const start = currentPct;
+                currentPct += team.pct;
+                return `${team.color} ${start}% ${currentPct}%`;
+            });
+            document.getElementById('team-pie-chart').style.background = `conic-gradient(${gradientParts.join(', ')})`;
+
+            // Update Legend
+            const legendEl = document.getElementById('team-legend');
+            legendEl.innerHTML = teamStats.map(team => `
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: ${team.color}"></div>
+                    <span class="text-white text-[10px]">${team.name}</span>
+                    <span class="legend-pct text-[10px]">${team.pct.toFixed(2)}%</span>
+                </div>
+            `).join('');
         }
 
         function rebuildCapital() {
