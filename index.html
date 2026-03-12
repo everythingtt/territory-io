@@ -1657,31 +1657,31 @@
             updateUI(state.lastMaxBalance);
         }
 
-        function startJustification() {
-            const targetIdx = state.activeDiploIdx;
-            if (!targetIdx) return;
+        function startJustification(customHostIdx = null, customTargetIdx = null) {
+            const isBotInitiated = customHostIdx !== null;
+            const hostIdx = isBotInitiated ? customHostIdx : 1;
+            const targetIdx = isBotInitiated ? customTargetIdx : state.activeDiploIdx;
+            
+            if (!targetIdx || hostIdx === targetIdx) return;
             
             // Check if either entity is already in a war
-            const hostInWar = state.wars.some(w => w.host === 1 || w.target === 1 || w.allies.includes(1));
+            const hostInWar = state.wars.some(w => w.host === hostIdx || w.target === hostIdx || w.allies.includes(hostIdx));
             const targetInWar = state.wars.some(w => w.host === targetIdx || w.target === targetIdx || w.allies.includes(targetIdx));
 
-            if (hostInWar) {
-                notify("You are already involved in a war!", "error");
-                return;
-            }
-            if (targetInWar) {
-                notify(`${state.entities[targetIdx].name} is already involved in another war!`, "error");
-                return;
-            }
+            if (hostInWar || targetInWar) return;
 
-            const playerTiles = state.entities[1].ownedCount;
-            const enemyTiles = state.entities[targetIdx].ownedCount;
-            const ratio = enemyTiles > 0 ? playerTiles / enemyTiles : 1;
+            const hostEntity = state.entities[hostIdx];
+            const targetEntity = state.entities[targetIdx];
+            
+            const hostTiles = hostEntity.ownedCount;
+            const enemyTiles = targetEntity.ownedCount;
+            const ratio = enemyTiles > 0 ? hostTiles / enemyTiles : 1;
             const requiredCycles = Math.ceil(5 + ratio);
             
             const allies = [];
-            for(let i=2; i<state.entities.length; i++) {
-                if(state.alliances.has(`1-${i}`) || state.alliances.has(`${i}-1`)) {
+            for(let i=1; i<state.entities.length; i++) {
+                if(i === hostIdx || i === targetIdx) continue;
+                if(state.alliances.has(`${Math.min(hostIdx, i)}-${Math.max(hostIdx, i)}`)) {
                     // Only add if ally is not in another war
                     const allyInWar = state.wars.some(w => w.host === i || w.target === i || w.allies.includes(i));
                     if (!allyInWar) allies.push(i);
@@ -1690,23 +1690,26 @@
 
             state.wars.push({
                 id: 'tky' + Math.floor(Math.random() * 900000 + 100000),
-                host: 1,
+                host: hostIdx,
                 target: targetIdx,
                 allies: allies,
                 justification: 0,
                 requiredCycles: requiredCycles,
                 active: false,
+                isBotWar: isBotInitiated,
+                botAssaultTimer: 0,
                 losses: { host: { tiles: 0, cities: 0 }, target: { tiles: 0, cities: 0 } },
                 capturedByHost: [], // Array of indices
                 capturedByTarget: [],
                 initialTiles: {
-                    [1]: state.entities[1].ownedCount,
-                    [targetIdx]: state.entities[targetIdx].ownedCount,
+                    [hostIdx]: hostEntity.ownedCount,
+                    [targetIdx]: targetEntity.ownedCount,
                     ...Object.fromEntries(allies.map(aIdx => [aIdx, state.entities[aIdx].ownedCount]))
                 }
             });
             
-            openDiplomacy(targetIdx);
+            if (!isBotInitiated) openDiplomacy(targetIdx);
+            else if (targetIdx === 1) notify(`${hostEntity.name} is justifying war against you!`, 'error');
         }
 
         function startPlanning(targetIdx) {
@@ -1897,6 +1900,75 @@
             executeTurn();
         }
 
+        function executeBotAssault(war) {
+            const bot = state.entities[war.host];
+            const target = state.entities[war.target];
+            const diff = bot.difficulty || 'ez';
+            
+            // Skill parameters
+            let turnCount = 3;
+            let tilesPerTurn = 5;
+            let focusOnCities = false;
+            
+            if (diff === 'strategic') { turnCount = 5; tilesPerTurn = 8; }
+            else if (diff === 'hard') { turnCount = 7; tilesPerTurn = 12; focusOnCities = true; }
+            else if (diff === 'insane') { turnCount = 10; tilesPerTurn = 20; focusOnCities = true; }
+
+            // Find valid target tiles (bordering or near bot)
+            const targetIndices = [];
+            for (let i = 0; i < state.tileOwners.length; i++) {
+                if (state.tileOwners[i] === war.target) {
+                    // Check if neighbors any of bot's or bot's allies tiles
+                    const x = i % CONFIG.COLS, y = Math.floor(i / CONFIG.COLS);
+                    const neighbors = [{x:x+1,y:0},{x:x-1,y:0},{x:0,y:y+1},{x:0,y:y-1}];
+                    const isReachable = neighbors.some(n => {
+                        const nx = x + n.x, ny = y + n.y;
+                        if (nx < 0 || nx >= CONFIG.COLS || ny < 0 || ny >= CONFIG.ROWS) return false;
+                        const owner = state.tileOwners[ny * CONFIG.COLS + nx];
+                        return owner === war.host || war.allies.includes(owner);
+                    });
+                    if (isReachable) targetIndices.push(i);
+                }
+            }
+
+            if (targetIndices.length === 0) return;
+
+            // Execute turns
+            let currentTurn = 0;
+            const executeTurn = () => {
+                if (currentTurn >= turnCount || !war.active) return;
+                
+                // Pick random targets from reachable list
+                const batch = [];
+                for (let i = 0; i < tilesPerTurn; i++) {
+                    if (targetIndices.length === 0) break;
+                    const randIdx = Math.floor(Math.random() * targetIndices.length);
+                    batch.push(targetIndices.splice(randIdx, 1)[0]);
+                }
+
+                batch.forEach(idx => {
+                    const tx = idx % CONFIG.COLS, ty = Math.floor(idx / CONFIG.COLS);
+                    const type = state.tileTypes[idx];
+                    
+                    // Bots get free claims during assault (economy handled separately)
+                    claim(tx, ty, true, war.host);
+                    
+                    war.losses.target.tiles++;
+                    if (type === 5) war.losses.target.cities++;
+                    if (type === 6) {
+                        state.entities[war.target].hasCapital = false;
+                        state.entities[war.target].capitalPos = null;
+                        state.tileTypes[idx] = 2;
+                        drawTile(tx, ty);
+                    }
+                });
+
+                currentTurn++;
+                setTimeout(executeTurn, 1000);
+            };
+            executeTurn();
+        }
+
         // Add Right Click Event for planning
         viewport.addEventListener('contextmenu', (e) => {
             e.preventDefault();
@@ -2069,6 +2141,23 @@
                         }
                     }
 
+                    // Bot Assault Planning
+                    if (war.active && war.isBotWar) {
+                        war.botAssaultTimer++;
+                        // Difficulty-based frequency: Insane (5s), Hard (10s), Strategic (15s), Easy (20s)
+                        const bot = state.entities[war.host];
+                        const diff = bot.difficulty || 'ez';
+                        let freq = 20;
+                        if (diff === 'insane') freq = 5;
+                        else if (diff === 'hard') freq = 10;
+                        else if (diff === 'strategic') freq = 15;
+
+                        if (war.botAssaultTimer >= freq) {
+                            war.botAssaultTimer = 0;
+                            executeBotAssault(war);
+                        }
+                    }
+
                     // Collapse Check
                      if (war.active) {
                          const involved = [war.host, war.target, ...war.allies];
@@ -2182,6 +2271,35 @@
                                         const isWar = state.wars.some(w => w.active && ((w.host === i && w.target === targetOwner) || (w.host === targetOwner && w.target === i)));
                                         if (isWar) claim(tx, ty, true, i);
                                     }
+                                }
+                            }
+                        }
+
+                        // Bot War Declarations (Only if not already at war)
+                        if (state.cycleTimer === 0 && !state.wars.some(w => w.host === i || w.target === i || w.allies.includes(i))) {
+                            // Find potential targets (bordering entities)
+                            const potentialTargets = new Set();
+                            for (const tIdx of owned) {
+                                const x = tIdx % CONFIG.COLS, y = Math.floor(tIdx / CONFIG.COLS);
+                                const neighbors = [{x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1}];
+                                for (const n of neighbors) {
+                                    const nx = x + n.x, ny = y + n.y;
+                                    if (nx >= 0 && nx < CONFIG.COLS && ny >= 0 && ny < CONFIG.ROWS) {
+                                        const owner = state.tileOwners[ny * CONFIG.COLS + nx];
+                                        if (owner > 0 && owner !== i && !state.alliances.has(`${Math.min(i, owner)}-${Math.max(i, owner)}`)) {
+                                            potentialTargets.add(owner);
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (potentialTargets.size > 0) {
+                                const targetArr = Array.from(potentialTargets);
+                                const chosenTarget = targetArr[Math.floor(Math.random() * targetArr.length)];
+                                // Higher difficulty = more likely to declare war
+                                const chance = diff === 'insane' ? 0.3 : (diff === 'hard' ? 0.15 : 0.05);
+                                if (Math.random() < chance) {
+                                    startJustification(i, chosenTarget);
                                 }
                             }
                         }
