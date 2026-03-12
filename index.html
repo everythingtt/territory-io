@@ -872,7 +872,6 @@
                     const h = team.colorInfo.range[0] + Math.random() * (team.colorInfo.range[1] - team.colorInfo.range[0]);
                     playerEntity.color = `hsl(${h}, 70%, 50%)`;
                     playerEntity.teamId = team.id;
-                    playerEntity.name = `t${Math.floor(h)}${team.id} ${state.username}`;
                     team.members.push(1);
                 }
                 state.entities.push(playerEntity);
@@ -903,7 +902,6 @@
                         const h = team.colorInfo.range[0] + Math.random() * (team.colorInfo.range[1] - team.colorInfo.range[0]);
                         botEntity.color = `hsl(${h}, 70%, 50%)`;
                         botEntity.teamId = team.id;
-                        botEntity.name = `t${Math.floor(h)}${team.id} BOT ${botId}`;
                         team.members.push(i);
                     }
                     state.entities.push(botEntity);
