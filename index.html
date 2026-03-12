@@ -1248,17 +1248,20 @@
         }
 
         function getWarCostMultiplier(entityIdx) {
-            const activeWar = state.wars.find(w => w.active && (w.host === entityIdx || w.allies.includes(entityIdx)));
+            const activeWar = state.wars.find(w => w.active && (w.host === entityIdx || w.allies.includes(entityIdx) || w.target === entityIdx || w.targetAllies.includes(entityIdx)));
             if (!activeWar) return 1;
             
-            // Host always pays 100x
-            if (activeWar.host === entityIdx) return 100;
+            // Primary host/target always pay 100x
+            if (entityIdx === activeWar.host || entityIdx === activeWar.target) return 100;
+
+            const onHostSide = activeWar.host === entityIdx || activeWar.allies.includes(entityIdx);
+            const sideHostIdx = onHostSide ? activeWar.host : activeWar.target;
             
-            // Ally check: Teammates of host pay regular price (1x), other allies pay 100x
-            const hostEntity = state.entities[activeWar.host];
+            const sideHostEntity = state.entities[sideHostIdx];
             const currentEntity = state.entities[entityIdx];
             
-            if (hostEntity.teamId !== undefined && hostEntity.teamId === currentEntity.teamId) {
+            // Teammates of the side host (Host or Target) pay regular price (1x)
+            if (sideHostEntity.teamId !== undefined && sideHostEntity.teamId === currentEntity.teamId) {
                 return 1;
             }
             
@@ -1287,15 +1290,16 @@
 
             // Record Capture for Peace Terms
             if (oldOwnerIdx !== 0 && oldOwnerIdx !== ownerIdx) {
-                const activeWar = state.wars.find(w => w.active && 
-                    ((w.host === ownerIdx && (w.target === oldOwnerIdx || w.allies.includes(oldOwnerIdx))) ||
-                     (w.target === ownerIdx && w.host === oldOwnerIdx) ||
-                     (w.allies.includes(ownerIdx) && w.target === oldOwnerIdx)));
+                const activeWar = state.wars.find(w => w.active && (
+                    // Host Side (Host + Host Allies) vs Target Side (Target + Target Allies)
+                    ((w.host === ownerIdx || w.allies.includes(ownerIdx)) && (w.target === oldOwnerIdx || w.targetAllies.includes(oldOwnerIdx))) ||
+                    ((w.target === ownerIdx || w.targetAllies.includes(ownerIdx)) && (w.host === oldOwnerIdx || w.allies.includes(oldOwnerIdx)))
+                ));
                 
                 if (activeWar) {
                     if (ownerIdx === activeWar.host || activeWar.allies.includes(ownerIdx)) {
                         activeWar.capturedByHost.push({ idx, originalOwner: oldOwnerIdx });
-                    } else if (ownerIdx === activeWar.target) {
+                    } else if (ownerIdx === activeWar.target || activeWar.targetAllies.includes(ownerIdx)) {
                         activeWar.capturedByTarget.push({ idx, originalOwner: oldOwnerIdx });
                     }
                 }
@@ -1822,7 +1826,8 @@
                 id: 'tky' + Math.floor(Math.random() * 900000 + 100000),
                 host: hostIdx,
                 target: targetIdx,
-                allies: allies,
+                allies: allies, // Host allies
+                targetAllies: [], // Defender allies
                 justification: 0,
                 requiredCycles: requiredCycles,
                 active: false,
@@ -2920,26 +2925,46 @@
                 return div;
             };
 
-            if (war.host === 1 || war.allies.includes(1)) {
+            const isHostSide = war.host === 1 || war.allies.includes(1);
+            const isTargetSide = war.target === 1 || war.targetAllies.includes(1);
+
+            if (isHostSide) {
                 // Player is on the Host/Ally side
-                allyList.appendChild(createEntityDiv(hostEntity, 'Host'));
+                allyList.appendChild(createEntityDiv(hostEntity, war.host === 1 ? 'Host (YOU)' : 'Host'));
                 war.allies.forEach(aIdx => {
-                    const label = aIdx === 1 ? 'YOU' : 'Ally';
+                    const label = aIdx === 1 ? 'Ally (YOU)' : 'Ally';
                     allyList.appendChild(createEntityDiv(state.entities[aIdx], label));
                 });
+                
                 enemyList.appendChild(createEntityDiv(targetEntity, 'Target'));
-            } else {
-                // Player is the target
-                allyList.appendChild(createEntityDiv(targetEntity, 'YOU'));
+                war.targetAllies.forEach(aIdx => {
+                    enemyList.appendChild(createEntityDiv(state.entities[aIdx], 'Hostile'));
+                });
+            } else if (isTargetSide) {
+                // Player is on the Target side
+                allyList.appendChild(createEntityDiv(targetEntity, war.target === 1 ? 'YOU' : 'Target'));
+                war.targetAllies.forEach(aIdx => {
+                    const label = aIdx === 1 ? 'Ally (YOU)' : 'Ally';
+                    allyList.appendChild(createEntityDiv(state.entities[aIdx], label));
+                });
+                
                 enemyList.appendChild(createEntityDiv(hostEntity, 'Host'));
-                war.allies.forEach(aIdx => enemyList.appendChild(createEntityDiv(state.entities[aIdx], 'Ally')));
+                war.allies.forEach(aIdx => {
+                    enemyList.appendChild(createEntityDiv(state.entities[aIdx], 'Hostile'));
+                });
+            } else {
+                // Spectator view (should not happen for now as per logic)
+                allyList.appendChild(createEntityDiv(hostEntity, 'Host'));
+                war.allies.forEach(aIdx => allyList.appendChild(createEntityDiv(state.entities[aIdx], 'Ally')));
+                enemyList.appendChild(createEntityDiv(targetEntity, 'Target'));
+                war.targetAllies.forEach(aIdx => enemyList.appendChild(createEntityDiv(state.entities[aIdx], 'Ally')));
             }
 
             document.getElementById('war-ally-losses').innerText = `${war.losses.host.tiles} Tiles | ${war.losses.host.cities} Cities`;
             document.getElementById('war-enemy-losses').innerText = `${war.losses.target.tiles} Tiles | ${war.losses.target.cities} Cities`;
 
             // Only show "Add War Ally" if player is in the war
-            const playerInWar = war.host === 1 || war.target === 1 || war.allies.includes(1);
+            const playerInWar = isHostSide || isTargetSide;
             document.getElementById('btn-add-war-ally').classList.toggle('hidden', !playerInWar);
 
             document.getElementById('war-panel-modal').classList.remove('hidden');
@@ -2956,16 +2981,19 @@
             const listEl = document.getElementById('potential-allies-list');
             listEl.innerHTML = '';
 
-            if (war.allies.length >= 3) {
-                listEl.innerHTML = '<div class="text-center text-red-500 py-4 text-[10px] uppercase font-bold">Max 3 allies reached for this war</div>';
+            const isHostSide = war.host === 1 || war.allies.includes(1);
+            const currentAllyCount = isHostSide ? war.allies.length : war.targetAllies.length;
+
+            if (currentAllyCount >= 3) {
+                listEl.innerHTML = '<div class="text-center text-red-500 py-4 text-[10px] uppercase font-bold">Max 3 allies reached for your side</div>';
                 document.getElementById('add-ally-modal').classList.remove('hidden');
                 return;
             }
             
-            // Host side entities already in the war
-            const alreadyInWar = [war.host, war.target, ...war.allies];
+            // All entities already in the war
+            const alreadyInWar = [war.host, war.target, ...war.allies, ...war.targetAllies];
             
-            // Potential allies: Teammates and Allies who are NOT in any war
+            // Potential allies: Teammates and Allies of the player who are NOT in any war
             const potentialAllies = [];
             for (let i = 1; i < state.entities.length; i++) {
                 if (alreadyInWar.includes(i)) continue;
@@ -2973,11 +3001,12 @@
                 const entity = state.entities[i];
                 if (entity.ownedCount === 0) continue;
                 
+                // We only care if they are a teammate or ally of the PLAYER (who is the one opening this modal)
                 const isTeammate = state.entities[1].teamId !== undefined && state.entities[1].teamId === entity.teamId;
                 const isAlly = state.alliances.has(`1-${i}`) || state.alliances.has(`${i}-1`);
                 
                 if (isTeammate || isAlly) {
-                    const inWar = state.wars.some(w => w.host === i || w.target === i || w.allies.includes(i));
+                    const inWar = state.wars.some(w => w.host === i || w.target === i || w.allies.includes(i) || w.targetAllies.includes(i));
                     if (!inWar) potentialAllies.push(i);
                 }
             }
@@ -3099,12 +3128,59 @@
             const war = state.wars.find(w => w.id === warId);
             if (!war) return;
             
-            if (!war.allies.includes(entityIdx) && war.allies.length < 3) {
-                war.allies.push(entityIdx);
-                war.initialTiles[entityIdx] = state.entities[entityIdx].ownedCount;
-            } else if (war.allies.length >= 3) {
-                notify("Cannot add more than 3 allies to a war!", "error");
-                return;
+            // Determine which side the ally is joining.
+            // If entityIdx is a teammate or ally of the host, join host side.
+            // If entityIdx is a teammate or ally of the target, join target side.
+            const hostEntity = state.entities[war.host];
+            const targetEntity = state.entities[war.target];
+            const entity = state.entities[entityIdx];
+            
+            const isHostSide = (entity.teamId !== undefined && entity.teamId === hostEntity.teamId) || 
+                               state.alliances.has(`${Math.min(war.host, entityIdx)}-${Math.max(war.host, entityIdx)}`);
+                               
+            const isTargetSide = (entity.teamId !== undefined && entity.teamId === targetEntity.teamId) || 
+                                 state.alliances.has(`${Math.min(war.target, entityIdx)}-${Math.max(war.target, entityIdx)}`);
+
+            if (isHostSide) {
+                if (!war.allies.includes(entityIdx)) {
+                    if (war.allies.length < 3) {
+                        war.allies.push(entityIdx);
+                        war.initialTiles[entityIdx] = entity.ownedCount;
+                    } else {
+                        notify("Cannot add more than 3 allies to this side!", "error");
+                        return;
+                    }
+                }
+            } else if (isTargetSide) {
+                if (!war.targetAllies.includes(entityIdx)) {
+                    if (war.targetAllies.length < 3) {
+                        war.targetAllies.push(entityIdx);
+                        war.initialTiles[entityIdx] = entity.ownedCount;
+                    } else {
+                        notify("Cannot add more than 3 allies to this side!", "error");
+                        return;
+                    }
+                }
+            } else {
+                // If neither, default to the side that requested/invited them
+                // This would usually be the player's side if they are the one inviting
+                if (war.host === 1 || war.allies.includes(1)) {
+                    if (war.allies.length < 3) {
+                        war.allies.push(entityIdx);
+                        war.initialTiles[entityIdx] = entity.ownedCount;
+                    } else {
+                        notify("Cannot add more than 3 allies to your side!", "error");
+                        return;
+                    }
+                } else if (war.target === 1 || war.targetAllies.includes(1)) {
+                    if (war.targetAllies.length < 3) {
+                        war.targetAllies.push(entityIdx);
+                        war.initialTiles[entityIdx] = entity.ownedCount;
+                    } else {
+                        notify("Cannot add more than 3 allies to your side!", "error");
+                        return;
+                    }
+                }
             }
             
             // If War Panel is open, refresh it
@@ -3118,61 +3194,65 @@
             if (!war) return;
 
             const playerOnHostSide = war.host === 1 || war.allies.includes(1);
+            const playerOnTargetSide = war.target === 1 || war.targetAllies.includes(1);
             
-            // If player is an ally (not host) and chooses white peace
-            if (war.host !== 1 && war.allies.includes(1) && type === 'white') {
+            // If player is an ally (not primary host or target) and chooses white peace
+            const isAllyOnly = (war.allies.includes(1) && war.host !== 1) || (war.targetAllies.includes(1) && war.target !== 1);
+            
+            if (isAllyOnly && type === 'white') {
                 notify(`You have left the war via White Peace.`, 'success');
                 
-                // Revert only tiles captured by the player
-                // These are tiles in war.capturedByHost that are currently owned by the player (1)
-                const playerCapturesFromTarget = war.capturedByHost.filter(c => state.tileOwners[c.idx] === 1);
-                playerCapturesFromTarget.forEach(c => {
+                // Revert only tiles captured BY the player (from the other side)
+                // If player is on host side, they captured from target side (target + targetAllies)
+                // If player is on target side, they captured from host side (host + hostAllies)
+                
+                const myCaptures = (playerOnHostSide ? war.capturedByHost : war.capturedByTarget).filter(c => state.tileOwners[c.idx] === 1);
+                myCaptures.forEach(c => {
                     const x = c.idx % CONFIG.COLS, y = Math.floor(c.idx / CONFIG.COLS);
                     const originalOwner = c.originalOwner;
                     
-                    // Update current owner (player) stats
                     state.entities[1].ownedCount--;
-                    state.ownedCount--; // Sync global state.ownedCount for player
+                    state.ownedCount--;
                     
-                    // Restore original owner stats
                     if (state.entities[originalOwner]) {
                         state.entities[originalOwner].ownedCount++;
-                        if (originalOwner === 1) state.ownedCount++; // Sync global state.ownedCount if player is original owner
+                        if (originalOwner === 1) state.ownedCount++;
                     }
                     
-                    // Set ownership back to original
                     state.tileOwners[c.idx] = originalOwner;
-                    
                     updateTileBorder(x, y);
                     drawTile(x, y);
                 });
 
-                // Also check if the player (as ally) lost any tiles to the target (war.capturedByTarget)
-                // and restore them if they were originally owned by the player.
-                const playerLossesToTarget = war.capturedByTarget.filter(c => c.originalOwner === 1 && state.tileOwners[c.idx] === war.target);
-                playerLossesToTarget.forEach(c => {
+                // Revert only tiles lost BY the player (to the other side)
+                const otherSideTarget = playerOnHostSide ? war.target : war.host;
+                const otherSideAllies = playerOnHostSide ? war.targetAllies : war.allies;
+                const myLosses = (playerOnHostSide ? war.capturedByTarget : war.capturedByHost).filter(c => c.originalOwner === 1 && (state.tileOwners[c.idx] === otherSideTarget || otherSideAllies.includes(state.tileOwners[c.idx])));
+                
+                myLosses.forEach(c => {
                     const x = c.idx % CONFIG.COLS, y = Math.floor(c.idx / CONFIG.COLS);
+                    const currentOwner = state.tileOwners[c.idx];
                     
-                    // Update current owner (target) stats
-                    state.entities[war.target].ownedCount--;
+                    if (state.entities[currentOwner]) {
+                        state.entities[currentOwner].ownedCount--;
+                        if (currentOwner === 1) state.ownedCount--;
+                    }
                     
-                    // Restore player stats
                     state.entities[1].ownedCount++;
-                    state.ownedCount++; // Sync global state.ownedCount for player
+                    state.ownedCount++;
                     
-                    // Set ownership back to player
                     state.tileOwners[c.idx] = 1;
-                    
                     updateTileBorder(x, y);
                     drawTile(x, y);
                 });
                 
-                // Clean up the war records: remove any mention of tiles that were originally player's or captured by player
+                // Clean up war records
                 war.capturedByHost = war.capturedByHost.filter(c => state.tileOwners[c.idx] !== 1 && c.originalOwner !== 1);
                 war.capturedByTarget = war.capturedByTarget.filter(c => state.tileOwners[c.idx] !== 1 && c.originalOwner !== 1);
                 
                 // Remove player from allies
                 war.allies = war.allies.filter(a => a !== 1);
+                war.targetAllies = war.targetAllies.filter(a => a !== 1);
                 state.activeWarId = null;
                 closeWarPanel();
                 checkForDams();
@@ -3294,6 +3374,7 @@
                 // The surviving side wins
                 if (eIdx === war.host) {
                     state.entities[war.target].warsWon++;
+                    war.targetAllies.forEach(aIdx => state.entities[aIdx].warsWon++);
                 } else {
                     state.entities[war.host].warsWon++;
                     war.allies.forEach(aIdx => state.entities[aIdx].warsWon++);
