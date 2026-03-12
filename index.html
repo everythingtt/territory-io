@@ -1234,7 +1234,7 @@
                         
                         const capLabel = document.createElement('div');
                         capLabel.className = ownerIdx === 1 ? 'city-label capital-label' : 'city-label capital-label bot-label';
-                        capLabel.innerText = ownerIdx === 1 ? state.username.toUpperCase() : entity.id;
+                        capLabel.innerText = ownerIdx === 1 ? state.username.toUpperCase() : entity.name.toUpperCase();
                         capLabel.style.left = `${(tx + 0.5) * CONFIG.TILE_SIZE}px`;
                         capLabel.style.top = `${(ty + 0.5) * CONFIG.TILE_SIZE}px`;
                         if (ownerIdx !== 1) capLabel.style.borderColor = entity.color;
