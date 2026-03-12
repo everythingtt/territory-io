@@ -1614,8 +1614,14 @@
             document.getElementById('btn-propose-alliance').classList.toggle('hidden', isAlly || isTeammate);
             document.getElementById('btn-send-aid').classList.toggle('hidden', !(isAlly || isTeammate));
             
-            // Check for active war or justification
-            const activeWar = state.wars.find(w => (w.host === 1 && w.target === entityIdx) || (w.host === entityIdx && w.target === 1));
+            // Check for active war or justification (including wars where player is an ally/teammate)
+            const playerEntity = state.entities[1];
+            const activeWar = state.wars.find(w => {
+                const isDirect = (w.host === 1 && w.target === entityIdx) || (w.host === entityIdx && w.target === 1);
+                const isAllyOfHost = w.allies.includes(1) && w.target === entityIdx;
+                const isAllyOfTarget = w.allies.includes(entityIdx) && w.host === 1;
+                return isDirect || isAllyOfHost || isAllyOfTarget;
+            });
             const btnWar = document.getElementById('btn-declare-war');
             const progress = document.getElementById('justification-progress');
             
@@ -1634,9 +1640,19 @@
                     progress.classList.remove('hidden');
                 }
             } else {
+                // Check if player is involved in ANY other war
+                const playerInAnyWar = state.wars.some(w => w.host === 1 || w.target === 1 || w.allies.includes(1));
+                
                 btnWar.classList.remove('hidden');
-                btnWar.innerText = '⚔️ DECLARE WAR';
-                btnWar.disabled = false;
+                if (playerInAnyWar) {
+                    btnWar.innerText = '⚔️ ALREADY AT WAR';
+                    btnWar.disabled = true;
+                    btnWar.className = 'w-full bg-slate-700 py-3 rounded-xl font-bold text-slate-500 text-xs uppercase cursor-not-allowed';
+                } else {
+                    btnWar.innerText = '⚔️ DECLARE WAR';
+                    btnWar.disabled = false;
+                    btnWar.className = 'w-full bg-red-600 hover:bg-red-700 py-3 rounded-xl font-bold text-white text-xs uppercase transition-colors';
+                }
                 progress.classList.add('hidden');
             }
 
