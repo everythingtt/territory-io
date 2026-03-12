@@ -1221,9 +1221,9 @@
             const isWater = state.tileTypes[idx] === 0;
             let currentCost = isWater ? (entity.tileCost * CONFIG.BRIDGE_MULTIPLIER) : entity.tileCost;
             
-            // 100x Price when at war (only for player)
+            // 100x Price when at war (only for the war host)
             if (ownerIdx === 1 && !free) {
-                const activeWar = state.wars.find(w => w.active && (w.host === 1 || w.target === 1 || w.allies.includes(1)));
+                const activeWar = state.wars.find(w => w.active && w.host === 1);
                 if (activeWar) currentCost *= 100;
             }
             
@@ -1753,7 +1753,7 @@
 
             // Calculate Total Plan Cost
             let totalCost = 0;
-            const activeWar = state.wars.find(w => w.active && (w.host === 1 || w.target === 1 || w.allies.includes(1)));
+            const activeWar = state.wars.find(w => w.active && w.host === 1);
             const warMultiplier = activeWar ? 100 : 1;
             
             const playerEntity = state.entities[1];
@@ -1816,7 +1816,8 @@
 
             // Pre-deployment balance check
             let totalCost = 0;
-            const warMultiplier = 100; // Always at war if we reach here
+            const isHost = war.host === 1;
+            const warMultiplier = isHost ? 100 : 1;
             const playerEntity = state.entities[1];
             state.planning.turns.forEach(turn => {
                 turn.forEach(idx => {
@@ -2367,7 +2368,7 @@
             
             // 100x Cost Indicator during war (for player)
             const playerEntity = state.entities[1];
-            const activeWar = state.wars.find(w => w.active && (w.host === 1 || w.target === 1 || w.allies.includes(1)));
+            const activeWar = state.wars.find(w => w.active && w.host === 1);
             const displayCost = activeWar ? playerEntity.tileCost * 100 : playerEntity.tileCost;
             const costEl = document.getElementById('stat-cost');
             costEl.innerText = `$${Math.floor(displayCost)}`;
@@ -2443,7 +2444,7 @@
                     case 'dams': value = e.damCount; suffix = ' Dams'; break;
                     case 'cost': 
                         let cost = e.tileCost;
-                        if (activeWar) cost *= 100;
+                        if (activeWar && activeWar.host === entityIdx) cost *= 100;
                         value = Math.floor(cost); suffix = ''; break;
                 }
                 return { name: e.name, color: e.color, value: Number(value), suffix, id: e.id, isPlayer: e.type === 'player', ownedCount: e.ownedCount };
