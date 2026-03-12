@@ -2520,7 +2520,7 @@
             document.getElementById('label-balance').innerText = `$${Math.floor(state.balance).toLocaleString()}`;
 
             // Update War Panel Icon
-            const playerActiveWar = state.wars.find(w => w.active && (w.host === 1 || w.target === 1));
+            const playerActiveWar = state.wars.find(w => w.active && (w.host === 1 || w.target === 1 || w.allies.includes(1)));
             document.getElementById('war-panel-icon').classList.toggle('hidden', !playerActiveWar);
             if (playerActiveWar) {
                 state.activeWarId = playerActiveWar.id;
@@ -2664,13 +2664,19 @@
                 return div;
             };
 
-            if (war.host === 1) {
+            if (war.host === 1 || war.allies.includes(1)) {
+                // Player is on the Host/Ally side
                 allyList.appendChild(createEntityDiv(hostEntity, 'Host'));
-                war.allies.forEach(aIdx => allyList.appendChild(createEntityDiv(state.entities[aIdx], 'Ally')));
+                war.allies.forEach(aIdx => {
+                    const label = aIdx === 1 ? 'YOU' : 'Ally';
+                    allyList.appendChild(createEntityDiv(state.entities[aIdx], label));
+                });
                 enemyList.appendChild(createEntityDiv(targetEntity, 'Target'));
             } else {
-                allyList.appendChild(createEntityDiv(targetEntity, 'Host')); // If player is target, they are the 'ally' side host
-                enemyList.appendChild(createEntityDiv(hostEntity, 'Target'));
+                // Player is the target
+                allyList.appendChild(createEntityDiv(targetEntity, 'YOU'));
+                enemyList.appendChild(createEntityDiv(hostEntity, 'Host'));
+                war.allies.forEach(aIdx => enemyList.appendChild(createEntityDiv(state.entities[aIdx], 'Ally')));
             }
 
             document.getElementById('war-ally-losses').innerText = `${war.losses.host.tiles} Tiles | ${war.losses.host.cities} Cities`;
@@ -2817,12 +2823,13 @@
             const war = state.wars.find(w => w.id === state.activeWarId);
             if (!war) return;
 
-            const targetIdx = (war.host === 1) ? war.target : war.host;
+            const playerOnHostSide = war.host === 1 || war.allies.includes(1);
+            const targetIdx = playerOnHostSide ? war.target : war.host;
             const targetEntity = state.entities[targetIdx];
 
             // Bot Peace Acceptance Logic
-            const ourLosses = (war.host === 1) ? war.losses.host.tiles : war.losses.target.tiles;
-            const theirLosses = (war.host === 1) ? war.losses.target.tiles : war.losses.host.tiles;
+            const ourLosses = playerOnHostSide ? war.losses.host.tiles : war.losses.target.tiles;
+            const theirLosses = playerOnHostSide ? war.losses.target.tiles : war.losses.host.tiles;
             
             let accepted = false;
             if (type === 'white') {
