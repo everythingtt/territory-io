@@ -1813,7 +1813,7 @@
                 if(isTeammate || isAlly) {
                     // Only add if ally is not in another war and under limit
                     const allyInWar = state.wars.some(w => w.host === i || w.target === i || w.allies.includes(i));
-                    if (!allyInWar && allies.length < 5) allies.push(i);
+                    if (!allyInWar && allies.length < 3) allies.push(i);
                 }
             }
 
@@ -2912,8 +2912,8 @@
             const listEl = document.getElementById('potential-allies-list');
             listEl.innerHTML = '';
 
-            if (war.allies.length >= 5) {
-                listEl.innerHTML = '<div class="text-center text-red-500 py-4 text-[10px] uppercase font-bold">Max 5 allies reached for this war</div>';
+            if (war.allies.length >= 3) {
+                listEl.innerHTML = '<div class="text-center text-red-500 py-4 text-[10px] uppercase font-bold">Max 3 allies reached for this war</div>';
                 document.getElementById('add-ally-modal').classList.remove('hidden');
                 return;
             }
@@ -3055,11 +3055,11 @@
             const war = state.wars.find(w => w.id === warId);
             if (!war) return;
             
-            if (!war.allies.includes(entityIdx) && war.allies.length < 5) {
+            if (!war.allies.includes(entityIdx) && war.allies.length < 3) {
                 war.allies.push(entityIdx);
                 war.initialTiles[entityIdx] = state.entities[entityIdx].ownedCount;
-            } else if (war.allies.length >= 5) {
-                notify("Cannot add more than 5 allies to a war!", "error");
+            } else if (war.allies.length >= 3) {
+                notify("Cannot add more than 3 allies to a war!", "error");
                 return;
             }
             
@@ -3074,6 +3074,35 @@
             if (!war) return;
 
             const playerOnHostSide = war.host === 1 || war.allies.includes(1);
+            
+            // If player is an ally (not host) and chooses white peace
+            if (war.host !== 1 && war.allies.includes(1) && type === 'white') {
+                notify(`You have left the war via White Peace.`, 'success');
+                
+                // Revert only tiles captured by the player
+                const playerCaptures = war.capturedByHost.filter(c => state.tileOwners[c.idx] === 1);
+                playerCaptures.forEach(c => {
+                    const x = c.idx % CONFIG.COLS, y = Math.floor(c.idx / CONFIG.COLS);
+                    state.tileOwners[c.idx] = c.originalOwner;
+                    // Update stats
+                    state.entities[1].ownedCount--;
+                    state.ownedCount--;
+                    state.entities[c.originalOwner].ownedCount++;
+                    updateTileBorder(x, y);
+                    drawTile(x, y);
+                });
+                
+                // Remove player captures from the war record
+                war.capturedByHost = war.capturedByHost.filter(c => state.tileOwners[c.idx] !== 1);
+                
+                // Remove player from allies
+                war.allies = war.allies.filter(a => a !== 1);
+                state.activeWarId = null;
+                closeWarPanel();
+                checkForDams();
+                return;
+            }
+
             const targetIdx = playerOnHostSide ? war.target : war.host;
             const targetEntity = state.entities[targetIdx];
 
