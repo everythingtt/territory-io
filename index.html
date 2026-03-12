@@ -108,6 +108,14 @@
             animation: float-up 1s ease-out forwards;
             z-index: 50;
         }
+        .explosion-gif {
+            position: absolute;
+            width: 128px;
+            height: 128px;
+            pointer-events: none;
+            z-index: 100;
+            transform: translate(-50%, -50%);
+        }
         @keyframes float-up {
             0% { transform: translateY(0); opacity: 1; }
             100% { transform: translateY(-30px); opacity: 0; }
@@ -2106,13 +2114,7 @@
                         if (type === 5) activeWar.losses.target.cities++;
                         if (type === 6) { // Capital conquered
                             // Boom Effect
-                            const boom = document.createElement('div');
-                            boom.className = 'bonus-popup'; boom.style.color = '#ef4444'; boom.style.fontSize = '24px';
-                            boom.innerText = '💥 BOOM!';
-                            boom.style.left = `${x * CONFIG.TILE_SIZE}px`;
-                            boom.style.top = `${y * CONFIG.TILE_SIZE}px`;
-                            container.appendChild(boom);
-                            setTimeout(() => boom.remove(), 1000);
+                            createExplosion(x, y);
 
                             const enemy = state.entities[oldOwner];
                             enemy.hasCapital = false;
@@ -2239,13 +2241,7 @@
                     if (type === 5) war.losses.target.cities++;
                     if (type === 6) {
                         // Boom Effect
-                        const boom = document.createElement('div');
-                        boom.className = 'bonus-popup'; boom.style.color = '#ef4444'; boom.style.fontSize = '24px';
-                        boom.innerText = '💥 BOOM!';
-                        boom.style.left = `${tx * CONFIG.TILE_SIZE}px`;
-                        boom.style.top = `${ty * CONFIG.TILE_SIZE}px`;
-                        container.appendChild(boom);
-                        setTimeout(() => boom.remove(), 1000);
+                        createExplosion(tx, ty);
 
                         const enemy = state.entities[war.target];
                         enemy.hasCapital = false;
@@ -2422,13 +2418,7 @@
             setTimeout(() => { 
                 if (isWar && (targetType === 5 || targetType === 6)) {
                     // Strategic Strike: "Boom" effect
-                    const boom = document.createElement('div');
-                    boom.className = 'bonus-popup'; boom.style.color = '#ef4444'; boom.style.fontSize = '24px';
-                    boom.innerText = '💥 BOOM!';
-                    boom.style.left = `${tx * CONFIG.TILE_SIZE}px`;
-                    boom.style.top = `${ty * CONFIG.TILE_SIZE}px`;
-                    container.appendChild(boom);
-                    setTimeout(() => boom.remove(), 1000);
+                    createExplosion(tx, ty);
 
                     if (targetType === 6) {
                         // Destroy Capital
@@ -2795,6 +2785,17 @@
             p.style.top = `${((minY + maxY + 1) / 2) * CONFIG.TILE_SIZE}px`;
             container.appendChild(p);
             setTimeout(() => p.remove(), 1000);
+        }
+
+        function createExplosion(x, y) {
+            const explosion = document.createElement('img');
+            explosion.src = 'assets/explosion.gif';
+            explosion.className = 'explosion-gif';
+            explosion.style.left = `${(x + 0.5) * CONFIG.TILE_SIZE}px`;
+            explosion.style.top = `${(y + 0.5) * CONFIG.TILE_SIZE}px`;
+            container.appendChild(explosion);
+            // Remove after the GIF finishes (approx 0.92s)
+            setTimeout(() => explosion.remove(), 1000);
         }
 
         function updateUI(maxVal) {
