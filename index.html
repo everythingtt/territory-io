@@ -2595,6 +2595,7 @@
                 updateUI(maxBalance);
 
                 // --- Bot AI & Economy ---
+                let anyInsaneExpanded = false;
                 for (let i = 2; i < state.entities.length; i++) {
                     const bot = state.entities[i];
                     if (bot.ownedCount === 0) continue;
@@ -2620,6 +2621,7 @@
                     // Bots expand on cycle 0 (or every tick for Insane)
                     const isInsane = bot.difficulty === 'insane';
                     if (state.cycleTimer === 0 || isInsane) {
+                        if (isInsane) anyInsaneExpanded = true;
                         if (state.cycleTimer === 0) {
                             bot.balance = Math.min(botMaxBalance, bot.balance + botIncome + (bot.ownedCount * 2));
                         }
@@ -2634,6 +2636,36 @@
                         for(let t=0; t<state.tileTypes.length; t++) if(state.tileOwners[t] === i && (state.tileFlags[t] & 16)) owned.push(t);
                         
                         if (owned.length > 0) {
+                            // Insane Bot Dam Logic: Proactively try to enclose water
+                            if (isInsane && Math.random() < 0.1) {
+                                // Find a water tile adjacent to territory
+                                for (const startIdx of owned) {
+                                    const sx = startIdx % CONFIG.COLS, sy = Math.floor(startIdx / CONFIG.COLS);
+                                    const dirs = [{x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1}];
+                                    for (const dir of dirs) {
+                                        const tx = sx + dir.x, ty = sy + dir.y;
+                                        if (tx >= 0 && tx < CONFIG.COLS && ty >= 0 && ty < CONFIG.ROWS) {
+                                            const tIdx = ty * CONFIG.COLS + tx;
+                                            if (state.tileTypes[tIdx] === 0 && state.tileOwners[tIdx] === 0) {
+                                                // Found water! Claim a random neighbor of this water that isn't owned by us
+                                                const wNeighbors = [{x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1}];
+                                                const wDir = wNeighbors[Math.floor(Math.random() * 4)];
+                                                const ntx = tx + wDir.x, nty = ty + wDir.y;
+                                                if (ntx >= 0 && ntx < CONFIG.COLS && nty >= 0 && nty < CONFIG.ROWS) {
+                                                    const ntIdx = nty * CONFIG.COLS + ntx;
+                                                    if (state.tileOwners[ntIdx] !== i) {
+                                                        claim(ntx, nty, true, i);
+                                                        expandCount--; // Use one expansion slot
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    if (expandCount <= 0) break;
+                                }
+                            }
+
                             for(let e=0; e<expandCount; e++) {
                                 const startIdx = owned[Math.floor(Math.random() * owned.length)];
                                 const sx = startIdx % CONFIG.COLS, sy = Math.floor(startIdx / CONFIG.COLS);
@@ -2736,6 +2768,7 @@
                         }
                     }
                 }
+                if (anyInsaneExpanded || state.cycleTimer === 0) checkForDams();
             }
         }
         requestAnimationFrame(gameLoop);
