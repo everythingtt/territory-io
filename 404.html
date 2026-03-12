@@ -43,36 +43,12 @@
             border: none;
             display: none;
         }
-        .bypass-link {
-            display: inline-block;
-            background: #3b82f6;
-            color: white;
-            text-decoration: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-weight: bold;
-            margin-top: 15px;
-            transition: background 0.2s;
-        }
-        .bypass-link:hover {
-            background: #2563eb;
-        }
-        .hint {
-            font-size: 12px;
-            color: #94a3b8;
-            margin-top: 10px;
-        }
     </style>
 </head>
 <body>
     <div id="loading-screen" class="loader">
         <div class="spinner"></div>
-        <p>Connecting to Tunnel Server...</p>
-        <div id="manual-bypass" style="display: none;">
-            <p style="color: #94a3b8; font-size: 14px;">First time connecting? Click below to authorize.</p>
-            <a href="https://anthropopathic-tula-photonuclear.ngrok-free.dev/game.html" target="_blank" class="bypass-link" onclick="startIframeAfterDelay()">Authorize & Play</a>
-            <p class="hint">Click "Visit Site" on the next page, then return here.</p>
-        </div>
+        <p>Connecting to Server...</p>
     </div>
     
     <iframe id="game-frame" src=""></iframe>
@@ -81,32 +57,25 @@
         const TUNNEL_URL = 'http://safe-putting.gl.at.ply.gg:21804/game.html';
         const frame = document.getElementById('game-frame');
         const loader = document.getElementById('loading-screen');
-        const manualBypass = document.getElementById('manual-bypass');
-
-        function startIframeAfterDelay() {
-            setTimeout(() => {
-                location.reload();
-            }, 2000);
-        }
 
         function loadGame() {
-            // Attempt to load directly
             frame.src = TUNNEL_URL;
             
             frame.onload = () => {
-                // If it loads successfully, hide loader
                 loader.style.display = 'none';
                 frame.style.display = 'block';
             };
 
-            // If it hasn't loaded in 4 seconds, show the manual bypass link
+            // Error handling for timeout
             setTimeout(() => {
                 if (loader.style.display !== 'none') {
-                    manualBypass.style.display = 'block';
-                    document.querySelector('.spinner').style.display = 'none';
-                    document.querySelector('p').innerText = "Connection taking longer than expected...";
+                    loader.innerHTML = `
+                        <p style="color: #ef4444;">Connection Failed</p>
+                        <p style="font-size: 12px; color: #94a3b8;">The server may be offline. Please try again later.</p>
+                        <button onclick="location.reload()" style="background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin-top: 10px;">Retry</button>
+                    `;
                 }
-            }, 4000);
+            }, 8000);
         }
 
         window.addEventListener('DOMContentLoaded', loadGame);
