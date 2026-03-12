@@ -16,10 +16,11 @@
             align-items: center;
             justify-content: center;
             color: #3b82f6;
-            font-family: 'Inter', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
         .loader {
             text-align: center;
+            padding: 20px;
         }
         .spinner {
             border: 4px solid rgba(59, 130, 246, 0.1);
@@ -42,58 +43,73 @@
             border: none;
             display: none;
         }
+        .bypass-link {
+            display: inline-block;
+            background: #3b82f6;
+            color: white;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: bold;
+            margin-top: 15px;
+            transition: background 0.2s;
+        }
+        .bypass-link:hover {
+            background: #2563eb;
+        }
+        .hint {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
     <div id="loading-screen" class="loader">
         <div class="spinner"></div>
         <p>Connecting to Tunnel Server...</p>
+        <div id="manual-bypass" style="display: none;">
+            <p style="color: #94a3b8; font-size: 14px;">First time connecting? Click below to authorize.</p>
+            <a href="https://anthropopathic-tula-photonuclear.ngrok-free.dev/game.html" target="_blank" class="bypass-link" onclick="startIframeAfterDelay()">Authorize & Play</a>
+            <p class="hint">Click "Visit Site" on the next page, then return here.</p>
+        </div>
     </div>
     
     <iframe id="game-frame" src=""></iframe>
 
     <script>
-        // CONFIGURATION: Set your tunneling server URL here
         const TUNNEL_URL = 'https://anthropopathic-tula-photonuclear.ngrok-free.dev/game.html';
-
         const frame = document.getElementById('game-frame');
         const loader = document.getElementById('loading-screen');
+        const manualBypass = document.getElementById('manual-bypass');
 
-        function loadGame() {
-            // Bypass ngrok browser warning by sending the required header via a fetch request first
-            // We use 'no-cors' mode to avoid preflight issues, although custom headers aren't 
-            // strictly allowed in 'no-cors', ngrok sometimes accepts them or the request
-            // itself helps set the session state.
-            fetch(TUNNEL_URL, {
-                method: 'GET',
-                headers: {
-                    'ngrok-skip-browser-warning': '69420'
-                }
-            }).catch(e => {
-                console.log("Bypass request attempted");
-            }).finally(() => {
-                // Now load the iframe
-                frame.src = TUNNEL_URL;
-                
-                frame.onload = () => {
-                    loader.style.display = 'none';
-                    frame.style.display = 'block';
-                };
-            });
-
-            // Error handling for timeout or unreachable tunnel
+        function startIframeAfterDelay() {
             setTimeout(() => {
-                if (loader.style.display !== 'none') {
-                    loader.innerHTML = `
-                        <p style="color: #ef4444;">Connection Failed</p>
-                        <p style="font-size: 12px; color: #94a3b8;">The tunneling server may be offline or the URL has changed.</p>
-                        <button onclick="location.reload()" style="background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin-top: 10px;">Retry</button>
-                    `;
-                }
-            }, 10000); // 10 second timeout
+                location.reload();
+            }, 2000);
         }
 
-        // Initialize loading
+        function loadGame() {
+            // Attempt to load directly
+            frame.src = TUNNEL_URL;
+            
+            frame.onload = () => {
+                // If it loads successfully, hide loader
+                loader.style.display = 'none';
+                frame.style.display = 'block';
+            };
+
+            // If it hasn't loaded in 4 seconds, show the manual bypass link
+            // This avoids CORS/CSP issues with fetch() while still providing a way in
+            setTimeout(() => {
+                if (loader.style.display !== 'none') {
+                    manualBypass.style.display = 'block';
+                    document.querySelector('.spinner').style.display = 'none';
+                    document.querySelector('p').innerText = "Connection taking longer than expected...";
+                }
+            }, 4000);
+        }
+
         window.addEventListener('DOMContentLoaded', loadGame);
     </script>
 </body>
