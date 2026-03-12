@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://*.ngrok-free.dev https://*.ngrok.io; img-src * data:; font-src * data:; frame-src https://*.ngrok-free.dev https://*.ngrok.io;">
     <title>Territory.io - Loading...</title>
     <style>
         body, html {
@@ -79,7 +78,7 @@
     <iframe id="game-frame" src=""></iframe>
 
     <script>
-        const TUNNEL_URL = 'https://anthropopathic-tula-photonuclear.ngrok-free.dev/game.html';
+        const TUNNEL_URL = 'http://safe-putting.gl.at.ply.gg:21804/game.html';
         const frame = document.getElementById('game-frame');
         const loader = document.getElementById('loading-screen');
         const manualBypass = document.getElementById('manual-bypass');
@@ -101,7 +100,6 @@
             };
 
             // If it hasn't loaded in 4 seconds, show the manual bypass link
-            // This avoids CORS/CSP issues with fetch() while still providing a way in
             setTimeout(() => {
                 if (loader.style.display !== 'none') {
                     manualBypass.style.display = 'block';
