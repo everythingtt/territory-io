@@ -5176,22 +5176,39 @@
 
             const targetIdx = playerOnHostSide ? war.target : war.host;
             const targetEntity = state.entities[targetIdx];
+            const playerEntity = state.entities[1];
 
-            // Bot Peace Acceptance Logic
+            // Bot Peace Acceptance Logic (Advantage Calculation)
             const ourLosses = playerOnHostSide ? war.losses.host.tiles : war.losses.target.tiles;
             const theirLosses = playerOnHostSide ? war.losses.target.tiles : war.losses.host.tiles;
             
+            // 1. Power Index Advantage
+            const powerAdvantage = playerEntity.powerIndex / (targetEntity.powerIndex || 0.1);
+            
+            // 2. Territory Advantage
+            const territoryAdvantage = playerEntity.ownedCount / (targetEntity.ownedCount || 1);
+            
+            // 3. Economic Strain (Target's balance vs their war penalty)
+            const economicStrain = (targetEntity.totalExpense || 0) / (targetEntity.balance || 1);
+            
+            // 4. Capital status
+            const targetHasNoCapital = !targetEntity.hasCapital;
+
             let accepted = false;
+            
+            // Overall Advantage Score (simplified)
+            const advantageScore = (powerAdvantage * 0.4) + (territoryAdvantage * 0.2) + (targetHasNoCapital ? 2.0 : 0) + (economicStrain * 5.0);
+
             if (type === 'white') {
-                // Bots accept white peace if they are losing or if it's a stalemate
-                if (theirLosses >= ourLosses * 0.8) accepted = true;
+                // Bots accept white peace if the player has a clear advantage, if they are losing, or if it's a stalemate
+                if (advantageScore > 1.5 || theirLosses >= ourLosses * 0.7 || targetHasNoCapital) accepted = true;
             } else {
-                // End War (Keep Borders): Bots accept if they are losing badly or if they have conquered enough and want to consolidate
-                if (theirLosses > ourLosses * 1.5) accepted = true;
+                // End War (Keep Borders): Bots accept if they are losing badly or if the player's overwhelming advantage makes resistance futile
+                if (advantageScore > 3.0 || theirLosses > ourLosses * 1.2 || targetHasNoCapital) accepted = true;
             }
 
             if (!accepted) {
-                notify(`${targetEntity.name} refuses your peace terms!`, 'error');
+                notify(`${targetEntity.name} refuses your peace terms! They still believe they can win.`, 'error');
                 return;
             }
 
