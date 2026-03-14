@@ -913,8 +913,8 @@
             research: {
                 tokens: 5,
                 trees: {
-                    economic: { tileCost: 0, rebuildCost: 0 },
-                    military: { warMissile: 0, warplane: 0 },
+                    economic: { tileCost: 0, rebuildCost: 0, maxBalance: 0 },
+                    military: { warMissile: 0, warplane: 0, warTileCost: 0 },
                     tokens: { miner: 0 },
                     political: {}
                 },
@@ -1457,12 +1457,17 @@
             if (!activeWar) return 1;
             
             let researchDiscount = 0;
+            let warTileDiscount = 0;
             if (entityIdx === 1) {
                 researchDiscount = getResearchBonus('economic', 'tileCost', 10);
+                // Military Research Discount (Levels 1-60: -10% to -99%)
+                warTileDiscount = getResearchBonus('military', 'warTileCost', 60, 0.1, 0.99);
             }
 
             // Primary host/target always pay 100x
-            if (entityIdx === activeWar.host || entityIdx === activeWar.target) return 100 * (1 - researchDiscount);
+            if (entityIdx === activeWar.host || entityIdx === activeWar.target) {
+                return 100 * (1 - researchDiscount) * (1 - warTileDiscount);
+            }
 
             const onHostSide = activeWar.host === entityIdx || activeWar.allies.includes(entityIdx);
             const sideHostIdx = onHostSide ? activeWar.host : activeWar.target;
@@ -1472,10 +1477,10 @@
             
             // Teammates of the side host (Host or Target) pay regular price (1x)
             if (sideHostEntity.teamId !== undefined && sideHostEntity.teamId === currentEntity.teamId) {
-                return 1 * (1 - researchDiscount);
+                return 1 * (1 - researchDiscount) * (1 - warTileDiscount);
             }
             
-            return 100 * (1 - researchDiscount);
+            return 100 * (1 - researchDiscount) * (1 - warTileDiscount);
         }
 
         function claim(x, y, free = false, ownerIdx = 1) {
@@ -3182,7 +3187,9 @@
                     globalDevBonus = (state.ownedCount * 0.50) * globalMultiplier;
                 }
                 
-                const maxBalance = baseMax * (cityMultiplier + devMaxMultiplier);
+                // Research Max Balance Bonus (Levels 1-100: +50% to +10000%)
+                const resMaxBalanceBonus = getResearchBonus('economic', 'maxBalance', 100, 0.5, 100);
+                const maxBalance = baseMax * (cityMultiplier + devMaxMultiplier) * (1 + resMaxBalanceBonus);
                 
                 const rate = Math.max(0.01, 0.07 - (0.06/0.69)*((state.balance/maxBalance)-0.01));
                 const income = state.ownedCount + (state.balance * rate) + (state.cityCount * CONFIG.CITY_BONUS) + (state.hasCapital ? CONFIG.CAPITAL_BONUS : 0) + (state.damCount * CONFIG.DAM_BONUS);
@@ -3510,6 +3517,7 @@
                     <div class="grid grid-cols-1 gap-4 mt-8">
                         ${renderResearchItem('Economic', 'tileCost', 'Tile Cost Reduction', 'Levels 1-10: Reduce cost from -1% to -95%', 10)}
                         ${renderResearchItem('Economic', 'rebuildCost', 'Rebuild Capital Discount', 'Levels 1-10: Reduce cost from -1% to -95%', 10)}
+                        ${renderResearchItem('Economic', 'maxBalance', 'Increase Max Balance', 'Levels 1-100: +50% to +10000% capacity', 100)}
                     </div>
                 `;
             } else if (tab === 'military') {
@@ -3521,6 +3529,7 @@
                     <div class="grid grid-cols-1 gap-4 mt-8">
                         ${renderResearchItem('Military', 'warMissile', 'War Missile Discount', 'Levels 1-20: Reduce cost from -1% to -95%', 20)}
                         ${renderResearchItem('Military', 'warplane', 'Warplane Discount', 'Levels 1-10: Reduce cost from -1% to -95%', 10)}
+                        ${renderResearchItem('Military', 'warTileCost', 'War Tile Cost Reduction', 'Levels 1-60: Reduce cost from -10% to -99%', 60)}
                     </div>
                 `;
             } else if (tab === 'tokens') {
@@ -3583,12 +3592,12 @@
             document.getElementById('res-token-count').innerText = state.research.tokens;
         }
 
-        function getResearchBonus(tree, key, max) {
+        function getResearchBonus(tree, key, max, startVal = 0.01, endVal = 0.95) {
             const level = state.research.trees[tree][key];
             if (level === 0) return 0;
-            // Exponential from 1% to 95%
-            // bonus = 0.01 * (95/1)^( (level-1)/(max-1) )
-            return 0.01 * Math.pow(95, (level - 1) / (max - 1));
+            // Exponential scaling
+            // bonus = startVal * (endVal/startVal)^( (level-1)/(max-1) )
+            return startVal * Math.pow(endVal / startVal, (level - 1) / (max - 1));
         }
 
         function openFactionModal() {
