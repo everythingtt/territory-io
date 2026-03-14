@@ -1548,6 +1548,9 @@
                         entity.hasCapital = true;
                         entity.capitalPos = {x: tx, y: ty};
                         state.cityIndices.add(idx);
+                        state.cityPopulations[idx] = 1000; // Initial population
+                        entity.cityCount++;
+                        if (ownerIdx === 1) state.cityCount++;
                         
                         const capLabel = document.createElement('div');
                         capLabel.className = ownerIdx === 1 ? 'city-label capital-label' : 'city-label capital-label bot-label';
@@ -2630,6 +2633,9 @@
                             enemy.hasCapital = false;
                             enemy.capitalPos = null;
                             enemy.paralyzedCycles = 15;
+                            state.cityIndices.delete(idx);
+                            state.entities[oldOwner].cityCount--;
+                            if (oldOwner === 1) state.cityCount--;
                             notify(`${enemy.name}'s Capital has been DESTROYED! They are paralyzed!`, 'war', x, y);
 
                             state.tileTypes[idx] = 2; // Turn into regular land
@@ -2672,10 +2678,22 @@
                 createExplosion(tx, ty);
                 
                 const type = state.tileTypes[targetIdx];
-                if (type === 5) { // City
+                const owner = state.tileOwners[targetIdx];
+                if (type === 5 || type === 6) { // City or Capital
                     state.cityIndices.delete(targetIdx);
                     state.tileTypes[targetIdx] = 2; // Land
-                    state.entities[state.tileOwners[targetIdx]].cityCount--;
+                    if (owner > 0) {
+                        state.entities[owner].cityCount--;
+                        if (owner === 1) state.cityCount--;
+                    }
+                    
+                    if (type === 6 && owner > 0) {
+                        const enemy = state.entities[owner];
+                        enemy.hasCapital = false;
+                        enemy.capitalPos = null;
+                        enemy.paralyzedCycles = 15;
+                        notify(`${enemy.name}'s Capital has been DESTROYED by War Missile!`, 'war', tx, ty);
+                    }
                     
                     // Remove labels near the target
                     const labels = document.querySelectorAll('.city-label');
@@ -2766,7 +2784,10 @@
                                     
                                     state.cityIndices.delete(nIdx);
                                     state.tileTypes[nIdx] = 2; // Revert to regular land
-                                    if (owner > 0) state.entities[owner].cityCount--;
+                                    if (owner > 0) {
+                                        state.entities[owner].cityCount--;
+                                        if (owner === 1) state.cityCount--;
+                                    }
                                     
                                     if (isCapital && owner > 0) {
                                         const enemy = state.entities[owner];
@@ -2939,7 +2960,14 @@
                     claim(tx, ty, true, war.host);
                     
                     war.losses.target.tiles++;
-                    if (type === 5) war.losses.target.cities++;
+                    if (type === 5 || type === 6) {
+                        war.losses.target.cities++;
+                        state.cityIndices.delete(idx);
+                        const enemy = state.entities[war.target];
+                        enemy.cityCount--;
+                        if (war.target === 1) state.cityCount--;
+                    }
+
                     if (type === 6) {
                         // Explosion already handled by rocket timeout if it was an Air Support hit,
                         // but for bordering hits we might need it? 
@@ -3051,6 +3079,7 @@
                 state.tileFlags[idx] &= ~1; // Remove building flag
                 state.tileTypes[idx] = 5; // Change to city
                 state.cityCount++;
+                state.cityPopulations[idx] = 100; // Initial population
                 drawTile(idx % CONFIG.COLS, Math.floor(idx / CONFIG.COLS));
                 
                 if (isShared) {
@@ -3373,6 +3402,18 @@
                 
                 const totalIncome = baseIncome + devBonus + globalDevBonus + investmentIncome;
                 
+                // Overpopulation Penalty (-10% balance per tick per overpopulated city)
+                let overpopPenalty = 0;
+                for (const idx of state.cityIndices) {
+                    if (state.tileOwners[idx] === 1) {
+                        const level = state.cityLevels[idx];
+                        const maxPop = 5000 * (level + 1);
+                        if (state.cityPopulations[idx] >= maxPop && level < 8) {
+                            overpopPenalty += state.balance * 0.10;
+                        }
+                    }
+                }
+
                 // War Penalty (-0.5% balance per tick, reduced by research)
                 let warPenalty = 0;
                 const playerActiveWar = state.wars.find(w => w.active && (w.host === 1 || w.target === 1 || w.allies.includes(1) || w.targetAllies.includes(1)));
@@ -3384,7 +3425,8 @@
                 }
 
                 if (state.balance !== Infinity) {
-                    state.balance = Math.min(maxBalance, state.balance + totalIncome - warPenalty);
+                    state.balance = Math.min(maxBalance, state.balance + totalIncome - warPenalty - overpopPenalty);
+                    if (state.balance < 0) state.balance = 0;
                 }
                 state.entities[1].balance = state.balance; // Keep in sync
                 state.cycleTimer++;
@@ -3394,9 +3436,10 @@
                     const owner = state.tileOwners[idx];
                     if (owner > 0) {
                         const level = state.cityLevels[idx];
+                        const maxPop = 5000 * (level + 1);
                         // Pop increase: 10 + (level * 5) per tick
                         const increase = 10 + (level * 5);
-                        state.cityPopulations[idx] = Math.min(5000, state.cityPopulations[idx] + increase);
+                        state.cityPopulations[idx] = Math.min(maxPop, state.cityPopulations[idx] + increase);
                     }
                 }
                 state.investments.forEach((inv, i) => {
@@ -3740,6 +3783,7 @@
                         ${renderResearchItem('Economic', 'tileCost', 'Tile Cost Reduction', 'Levels 1-10: Reduce cost from -1% to -95%', 10, 1)}
                         ${renderResearchItem('Economic', 'rebuildCost', 'Rebuild Capital Discount', 'Levels 1-10: Reduce cost from -1% to -95%', 10, 1)}
                         ${renderResearchItem('Economic', 'maxBalance', 'Increase Max Balance', 'Levels 1-100: +50% to +10000% capacity', 100, 1)}
+                        ${renderResearchItem('Economic', 'warPenalty', 'Reduce War Balance Penalty', 'Levels 1-30: Reduce penalty from -0.5% to -0.01%', 30, 1)}
                     </div>
                 `;
             } else if (tab === 'military') {
@@ -4182,13 +4226,17 @@
             const container = document.getElementById('mgt-cities-list');
             const playerCities = Array.from(state.cityIndices)
                 .filter(idx => state.tileOwners[idx] === 1)
-                .map(idx => ({
-                    idx,
-                    level: state.cityLevels[idx],
-                    pop: state.cityPopulations[idx],
-                    x: idx % CONFIG.COLS,
-                    y: Math.floor(idx / CONFIG.COLS)
-                }));
+                .map(idx => {
+                    const level = state.cityLevels[idx];
+                    return {
+                        idx,
+                        level,
+                        pop: state.cityPopulations[idx],
+                        maxPop: 5000 * (level + 1),
+                        x: idx % CONFIG.COLS,
+                        y: Math.floor(idx / CONFIG.COLS)
+                    };
+                });
 
             // Rank by level descending
             playerCities.sort((a, b) => b.level - a.level || b.pop - a.pop);
@@ -4210,7 +4258,7 @@
                     <div class="flex items-center gap-8">
                         <div class="text-right">
                             <div class="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Population</div>
-                            <div class="text-xs font-mono font-black text-blue-400">${city.pop.toLocaleString()} / 5,000</div>
+                            <div class="text-xs font-mono font-black text-blue-400">${city.pop.toLocaleString()} / ${city.maxPop.toLocaleString()}</div>
                         </div>
                         <button onclick="developCity(${city.idx})" class="bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 px-4 py-2 rounded-lg border border-blue-500/30 text-[9px] font-black uppercase transition-all">Develop</button>
                     </div>
@@ -4557,6 +4605,10 @@
             state.tileTypes[idx] = 6;
             state.entities[1].hasCapital = true;
             state.entities[1].capitalPos = { x: idx % CONFIG.COLS, y: Math.floor(idx / CONFIG.COLS) };
+            state.cityIndices.add(idx);
+            state.cityPopulations[idx] = 1000;
+            state.cityCount++;
+            state.entities[1].cityCount++;
             
             // Add label
             const tx = idx % CONFIG.COLS, ty = Math.floor(idx / CONFIG.COLS);
