@@ -598,6 +598,7 @@
                     <button onclick="setResearchTab('military')" id="tab-res-military" class="w-full text-left p-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all text-slate-500 hover:bg-slate-800">Military</button>
                     <button onclick="setResearchTab('tokens')" id="tab-res-tokens" class="w-full text-left p-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all text-slate-500 hover:bg-slate-800">Tokens</button>
                     <button onclick="setResearchTab('political')" id="tab-res-political" class="w-full text-left p-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all text-slate-500 hover:bg-slate-800">Political</button>
+                    <button onclick="setResearchTab('progress')" id="tab-res-progress" class="w-full text-left p-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all text-slate-500 hover:bg-slate-800">Progress</button>
                 </div>
                 <div class="mt-auto bg-slate-800/50 p-4 rounded-2xl border border-white/5">
                     <div class="text-[10px] text-slate-500 font-bold uppercase mb-1">R-Tokens</div>
@@ -3570,7 +3571,7 @@
         }
 
         function setResearchTab(tab) {
-            const tabs = ['base', 'economic', 'military', 'tokens', 'political'];
+            const tabs = ['base', 'economic', 'military', 'tokens', 'political', 'progress'];
             tabs.forEach(t => {
                 const btn = document.getElementById(`tab-res-${t}`);
                 const content = document.getElementById(`res-content-${t}`);
@@ -3642,6 +3643,64 @@
                         </div>
                         <h3 class="text-2xl font-bold text-white mb-2 uppercase italic tracking-tighter">Political Research</h3>
                         <p class="text-slate-500 font-bold uppercase text-xs tracking-widest">Coming Soon</p>
+                    </div>
+                `;
+            } else if (tab === 'progress') {
+                const caps = {
+                    base: { paintCapacity: 200 },
+                    economic: { tileCost: 10, rebuildCost: 10, maxBalance: 100 },
+                    military: { warMissile: 20, warplane: 10, warTileCost: 60 },
+                    tokens: { miner: 50 }
+                };
+                
+                let totalCurrent = 0, totalMax = 0;
+                const trees = Object.keys(caps).map(treeName => {
+                    let treeCurrent = 0, treeMax = 0;
+                    Object.keys(caps[treeName]).forEach(key => {
+                        treeCurrent += state.research.trees[treeName][key];
+                        treeMax += caps[treeName][key];
+                    });
+                    totalCurrent += treeCurrent;
+                    totalMax += treeMax;
+                    return { name: treeName, current: treeCurrent, max: treeMax, pct: (treeCurrent / treeMax) * 100 };
+                });
+                
+                const totalPct = (totalCurrent / totalMax) * 100;
+                
+                html = `
+                    <div class="mb-8">
+                        <h3 class="text-2xl font-bold text-white mb-2">Research Progress</h3>
+                        <p class="text-slate-400 text-sm">Overview of your scientific completion across all sectors.</p>
+                    </div>
+                    
+                    <div class="bg-slate-800/30 p-8 rounded-3xl border border-white/5 mb-8">
+                        <div class="flex justify-between items-end mb-4">
+                            <div class="text-sm font-black text-white uppercase tracking-widest">Total Completion</div>
+                            <div class="text-3xl font-black text-blue-400">${totalPct.toFixed(2)}%</div>
+                        </div>
+                        <div class="h-4 w-full bg-slate-900 rounded-full overflow-hidden p-1 border border-white/5">
+                            <div class="h-full bg-blue-500 rounded-full transition-all duration-1000 shadow-[0_0_15px_rgba(59,130,246,0.5)]" style="width: ${totalPct}%"></div>
+                        </div>
+                        <div class="mt-4 text-[10px] text-slate-500 font-bold uppercase tracking-wider text-right">
+                            ${totalCurrent} / ${totalMax} Total Upgrades
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        ${trees.map(tree => `
+                            <div class="bg-slate-800/50 p-6 rounded-2xl border border-white/5">
+                                <div class="flex justify-between items-center mb-3">
+                                    <div class="text-xs font-bold text-slate-300 uppercase tracking-widest">${tree.name}</div>
+                                    <div class="text-xs font-black text-white">${tree.pct.toFixed(1)}%</div>
+                                </div>
+                                <div class="h-2 w-full bg-slate-950 rounded-full overflow-hidden">
+                                    <div class="h-full bg-slate-400 rounded-full transition-all duration-700" style="width: ${tree.pct}%"></div>
+                                </div>
+                                <div class="mt-2 text-[9px] text-slate-500 font-bold uppercase">
+                                    ${tree.current} / ${tree.max} Levels
+                                </div>
+                            </div>
+                        `).join('')}
                     </div>
                 `;
             }
