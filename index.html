@@ -3760,7 +3760,7 @@
                         <p class="text-slate-400 text-sm">Optimize token generation through advanced computational mining.</p>
                     </div>
                     <div class="grid grid-cols-1 gap-4 mt-8">
-                        ${renderResearchItem('Tokens', 'miner', 'R-Token Miner', 'Levels 1-50: Increases R-TOKENS mined every 30s (+1 per level)', 50, 1)}
+                        ${renderResearchItem('Tokens', 'miner', 'R-Token Miner', 'Levels 1-50: Adds extra R-TOKENS to the default +1 every 30s', 50, 1)}
                     </div>
                 `;
             } else if (tab === 'political') {
@@ -3945,14 +3945,14 @@
             const playerActiveWar = state.wars.find(w => w.active && (w.host === 1 || w.target === 1 || w.allies.includes(1) || w.targetAllies.includes(1)));
             const isWar = !!playerActiveWar;
             
-            // Research Token Miner
+            // Research Token Miner (+1 default + miner level)
             const now = Date.now();
             const minerLevel = state.research.trees.tokens.miner;
-            if (minerLevel > 0 && now - state.research.lastMinerTick >= 30000) {
-                const tokensMined = minerLevel;
+            if (now - state.research.lastMinerTick >= 30000) {
+                const tokensMined = 1 + minerLevel;
                 state.research.tokens += tokensMined;
                 state.research.lastMinerTick = now;
-                notify(`${tokensMined} R-Token${tokensMined > 1 ? 's' : ''} mined! Total: ${state.research.tokens}`, "success");
+                notify(`${tokensMined} R-Token${tokensMined > 1 ? 's' : ''} generated! Total: ${state.research.tokens}`, "success");
                 updateResearchUI();
             }
 
