@@ -353,6 +353,18 @@
         </div>
     </div>
 
+    <!-- Spawn Confirmation Modal -->
+    <div id="spawn-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] flex items-center justify-center p-6">
+        <div class="bg-slate-900 p-6 rounded-3xl border border-slate-800 w-full max-w-xs shadow-2xl text-center">
+            <h2 class="text-xl font-bold text-blue-500 mb-2 uppercase">Confirm Spawn</h2>
+            <p class="text-slate-400 text-sm mb-6">Are you sure you want to place your capital here?</p>
+            <div class="flex gap-2">
+                <button onclick="cancelSpawn()" class="flex-1 bg-slate-700 py-3 rounded-xl font-bold text-slate-300">CANCEL</button>
+                <button onclick="confirmSpawn()" class="flex-1 bg-blue-600 py-3 rounded-xl font-bold text-white shadow-lg">CONFIRM</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Diplomacy Modal -->
     <div id="diplomacy-modal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[300] flex items-center justify-center p-6">
         <div class="bg-slate-900 p-8 rounded-3xl border border-slate-800 w-full max-w-md shadow-2xl">
@@ -676,9 +688,12 @@
             <div class="flex-1 p-8 overflow-y-auto custom-scrollbar">
                 <!-- Cities Tab -->
                 <div id="mgt-content-cities" class="space-y-6">
-                    <div class="flex justify-between items-center">
+                    <div class="flex justify-between items-center gap-2">
                         <h3 class="text-xl font-bold text-white uppercase italic">City Rankings</h3>
-                        <button onclick="bulkDevelopCities()" class="bg-blue-600 px-6 py-2.5 rounded-xl font-bold text-[10px] text-white shadow-lg hover:scale-105 transition-all uppercase tracking-widest">Bulk Develop All ($100/City)</button>
+                        <div class="flex gap-2">
+                            <button onclick="bulkCityBuild()" id="btn-bulk-build" class="bg-amber-600 px-6 py-2.5 rounded-xl font-bold text-[10px] text-white shadow-lg hover:scale-105 transition-all uppercase tracking-widest">Bulk Build Cities</button>
+                            <button onclick="bulkDevelopCities()" id="btn-bulk-develop" class="bg-blue-600 px-6 py-2.5 rounded-xl font-bold text-[10px] text-white shadow-lg hover:scale-105 transition-all uppercase tracking-widest">Bulk Develop All</button>
+                        </div>
                     </div>
                     <div id="mgt-cities-list" class="grid grid-cols-1 gap-3">
                         <!-- City list injected here -->
@@ -1060,6 +1075,7 @@
             panX: 0, panY: 0,
             lastTouchX: 0, lastTouchY: 0,
             pendingCityIdx: null,
+            pendingSpawnIdx: null,
             activeDonutIdx: null,
             launchedMissiles: new Set(), // Track indices being targetted to avoid duplicates
             activeExplosions: new Set(), // Prevent multiple explosions on same tile
@@ -1893,11 +1909,8 @@
             if (state.isSelectingSpawn) {
                 // Check if tile is wild land
                 if (state.tileTypes[idx] === 1 && state.tileOwners[idx] === 0) {
-                    state.isSelectingSpawn = false;
-                    state.intermissionActive = false;
-                    document.getElementById('intermission-hud').classList.add('hidden');
-                    spawnEntities(x - 3, y - 3); // Center 6x6 on click
-                    alert("Capital placed! You can now start building your empire.");
+                    state.pendingSpawnIdx = idx;
+                    document.getElementById('spawn-modal').classList.remove('hidden');
                 } else {
                     alert("Invalid location! Select a wild land tile.");
                 }
@@ -3014,6 +3027,27 @@
 
         function closeCityModal() { document.getElementById('city-modal').classList.add('hidden'); state.pendingCityIdx = null; }
 
+        function confirmSpawn() {
+            if (state.pendingSpawnIdx === null) return;
+            const idx = state.pendingSpawnIdx;
+            const x = idx % CONFIG.COLS;
+            const y = Math.floor(idx / CONFIG.COLS);
+            
+            state.isSelectingSpawn = false;
+            state.intermissionActive = false;
+            state.pendingSpawnIdx = null;
+            document.getElementById('spawn-modal').classList.add('hidden');
+            document.getElementById('intermission-hud').classList.add('hidden');
+            
+            spawnEntities(x - 3, y - 3); // Center 6x6 on click
+            notify("Capital placed! You can now start building your empire.", "success");
+        }
+
+        function cancelSpawn() {
+            state.pendingSpawnIdx = null;
+            document.getElementById('spawn-modal').classList.add('hidden');
+        }
+
         function openDonutMenu(idx, x, y) {
             state.activeDonutIdx = idx;
             const level = state.cityLevels[idx] || 0;
@@ -3069,6 +3103,15 @@
             if (!name || state.pendingCityIdx === null) return;
             const idx = state.pendingCityIdx;
             const isShared = state.pendingCityShared || false;
+            
+            const cost = state.entities[1].tileCost * 2;
+            if (state.balance < cost) {
+                notify(`Insufficient funds to build city! Need $${Math.floor(cost).toLocaleString()}`, "error");
+                return;
+            }
+
+            state.balance -= cost;
+            state.entities[1].balance = state.balance;
             
             state.tileFlags[idx] |= 1; // Mark as building
             state.cityIndices.add(idx);
@@ -3286,6 +3329,7 @@
                          state.intermissionActive = false;
                          state.isSelectingSpawn = false;
                          document.getElementById('intermission-hud').classList.add('hidden');
+                         document.getElementById('spawn-modal').classList.add('hidden');
                          spawnEntities(); // Random spawn fallback
                          alert("Time's up! Spawning at a random location.");
                      }
@@ -4217,6 +4261,24 @@
             // 2. Tab Content
             if (state.management.activeTab === 'cities') {
                 renderManagementCities();
+
+                // Update Bulk Buttons Text
+                const buildBtn = document.getElementById('btn-bulk-build');
+                if (buildBtn) {
+                    const cityCost = state.entities[1].tileCost * 2;
+                    buildBtn.innerText = `Bulk Build ($${Math.floor(cityCost).toLocaleString()}/ea)`;
+                }
+
+                const devBtn = document.getElementById('btn-bulk-develop');
+                if (devBtn) {
+                    const playerCities = Array.from(state.cityIndices).filter(idx => state.tileOwners[idx] === 1 && state.cityLevels[idx] < 8);
+                    let totalDevCost = 0;
+                    playerCities.forEach(idx => {
+                        const level = state.cityLevels[idx] || 0;
+                        totalDevCost += 100 * Math.pow(2, level);
+                    });
+                    devBtn.innerText = `Bulk Develop ($${totalDevCost.toLocaleString()})`;
+                }
             } else if (state.management.activeTab === 'investments') {
                 renderManagementInvestments();
             }
@@ -4267,10 +4329,13 @@
         }
 
         function developCity(idx) {
-            if (state.balance < 100) { notify("Insufficient funds to develop city!", "error"); return; }
-            if (state.cityLevels[idx] >= 8) { notify("City is already fully developed!", "info"); return; }
+            const level = state.cityLevels[idx] || 0;
+            if (level >= 8) { notify("City is already fully developed!", "info"); return; }
             
-            state.balance -= 100;
+            const cost = 100 * Math.pow(2, level);
+            if (state.balance < cost) { notify(`Insufficient funds! Need $${cost.toLocaleString()}`, "error"); return; }
+            
+            state.balance -= cost;
             state.entities[1].balance = state.balance;
             state.cityLevels[idx]++;
             drawTile(idx % CONFIG.COLS, Math.floor(idx / CONFIG.COLS));
@@ -4282,7 +4347,12 @@
             const playerCities = Array.from(state.cityIndices).filter(idx => state.tileOwners[idx] === 1 && state.cityLevels[idx] < 8);
             if (playerCities.length === 0) { notify("No cities need development!", "info"); return; }
             
-            const totalCost = playerCities.length * 100;
+            let totalCost = 0;
+            playerCities.forEach(idx => {
+                const level = state.cityLevels[idx] || 0;
+                totalCost += 100 * Math.pow(2, level);
+            });
+
             if (state.balance < totalCost) { notify(`Insufficient funds! Need $${totalCost.toLocaleString()}`, "error"); return; }
             
             state.balance -= totalCost;
@@ -4292,7 +4362,77 @@
                 drawTile(idx % CONFIG.COLS, Math.floor(idx / CONFIG.COLS));
             });
             updateManagementUI();
-            notify(`Bulk developed ${playerCities.length} cities!`, "success");
+            notify(`Bulk developed ${playerCities.length} cities for $${totalCost.toLocaleString()}!`, "success");
+        }
+
+        function bulkCityBuild() {
+            const playerLand = [];
+            for (let i = 0; i < state.tileTypes.length; i++) {
+                if (state.tileOwners[i] === 1 && state.tileTypes[i] === 2) {
+                    playerLand.push(i);
+                }
+            }
+
+            if (playerLand.length === 0) { notify("No suitable land to build cities!", "info"); return; }
+
+            const cityCost = state.entities[1].tileCost * 2;
+            const possibleSpots = [];
+            const tempCityIndices = new Set(state.cityIndices);
+
+            // Shuffle land to make city placement less predictable/uniform if territory is large
+            for (let i = playerLand.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [playerLand[i], playerLand[j]] = [playerLand[j], playerLand[i]];
+            }
+
+            for (const idx of playerLand) {
+                const x = idx % CONFIG.COLS, y = Math.floor(idx / CONFIG.COLS);
+                
+                let isTooClose = false;
+                for (const cityIdx of tempCityIndices) {
+                    const cx = cityIdx % CONFIG.COLS, cy = Math.floor(cityIdx / CONFIG.COLS);
+                    const dist = Math.sqrt(Math.pow(x - cx, 2) + Math.pow(y - cy, 2));
+                    if (dist < CONFIG.MIN_CITY_DISTANCE) {
+                        isTooClose = true;
+                        break;
+                    }
+                }
+
+                if (!isTooClose) {
+                    if (state.balance >= (possibleSpots.length + 1) * cityCost) {
+                        possibleSpots.push(idx);
+                        tempCityIndices.add(idx);
+                    }
+                }
+            }
+
+            if (possibleSpots.length === 0) {
+                if (state.balance < cityCost) notify(`Insufficient funds! Need $${Math.floor(cityCost).toLocaleString()}`, "error");
+                else notify("No valid spots found for more cities!", "info");
+                return;
+            }
+
+            const totalCost = possibleSpots.length * cityCost;
+            state.balance -= totalCost;
+            state.entities[1].balance = state.balance;
+
+            possibleSpots.forEach(idx => {
+                state.tileTypes[idx] = 5;
+                state.cityCount++;
+                state.cityPopulations[idx] = 100;
+                state.cityIndices.add(idx);
+                
+                const x = idx % CONFIG.COLS, y = Math.floor(idx / CONFIG.COLS);
+                const nameTag = document.createElement('div');
+                nameTag.className = 'city-label'; nameTag.innerText = `City ${state.cityCount}`;
+                nameTag.style.left = `${(x + 0.5) * CONFIG.TILE_SIZE}px`;
+                nameTag.style.top = `${(y + 0.5) * CONFIG.TILE_SIZE}px`;
+                container.appendChild(nameTag);
+                drawTile(x, y);
+            });
+
+            updateManagementUI();
+            notify(`Bulk built ${possibleSpots.length} cities for $${Math.floor(totalCost).toLocaleString()}!`, "success");
         }
 
         function renderManagementInvestments() {
