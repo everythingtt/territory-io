@@ -553,6 +553,39 @@
         </div>
     </div>
 
+    <!-- Ranking HUD Modal -->
+    <div id="ranking-modal" class="hidden fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[950] flex items-center justify-center p-6">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-5xl h-[700px] flex overflow-hidden shadow-2xl">
+            <!-- Sidebar -->
+            <div class="w-64 bg-slate-950/50 border-r border-slate-800 p-6 flex flex-col">
+                <h2 class="text-xl font-black text-white italic mb-8">RANKINGS</h2>
+                <div class="space-y-2 flex-1 overflow-y-auto custom-scrollbar">
+                    <button onclick="setRankingTab('powerIndex')" id="tab-rank-powerIndex" class="w-full text-left p-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all bg-purple-600 text-white shadow-lg">Power Index</button>
+                    <button onclick="setRankingTab('tiles')" id="tab-rank-tiles" class="w-full text-left p-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all text-slate-500 hover:bg-slate-800">Territory</button>
+                    <button onclick="setRankingTab('cities')" id="tab-rank-cities" class="w-full text-left p-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all text-slate-500 hover:bg-slate-800">Cities</button>
+                    <button onclick="setRankingTab('balance')" id="tab-rank-balance" class="w-full text-left p-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all text-slate-500 hover:bg-slate-800">Balance</button>
+                    <button onclick="setRankingTab('ovcd')" id="tab-rank-ovcd" class="w-full text-left p-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all text-slate-500 hover:bg-slate-800">Development</button>
+                    <button onclick="setRankingTab('wars')" id="tab-rank-wars" class="w-full text-left p-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all text-slate-500 hover:bg-slate-800">Military Wins</button>
+                    <button onclick="setRankingTab('dams')" id="tab-rank-dams" class="w-full text-left p-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all text-slate-500 hover:bg-slate-800">Infrastructure</button>
+                </div>
+            </div>
+            <!-- Content -->
+            <div class="flex-1 p-10 flex flex-col">
+                <div class="mb-8">
+                    <h3 id="ranking-title" class="text-3xl font-black text-white italic uppercase tracking-tighter">Power Index Ranking</h3>
+                    <p id="ranking-desc" class="text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em] mt-1">Live Global Comparison</p>
+                </div>
+                
+                <div id="ranking-chart-container" class="flex-1 flex flex-col gap-4 overflow-y-auto custom-scrollbar pr-4">
+                    <!-- Bar charts will be injected here -->
+                </div>
+            </div>
+            <button onclick="closeRankingModal()" class="absolute top-6 right-6 text-slate-500 hover:text-white transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 256 256"><path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z"></path></svg>
+            </button>
+        </div>
+    </div>
+
     <!-- Research Modal -->
     <div id="research-modal" class="hidden fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[900] flex items-center justify-center p-6">
         <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-4xl h-[600px] flex overflow-hidden shadow-2xl">
@@ -740,19 +773,14 @@
                             <button onclick="openResearch()" class="p-2 bg-blue-600/20 hover:bg-blue-600/40 rounded-lg border border-blue-500/30 transition-all" title="Open Research">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#3b82f6" viewBox="0 0 256 256"><path d="M224,128a96,96,0,1,1-96-96A96,96,0,0,1,224,128Z" opacity="0.2"></path><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm12-88a12,12,0,1,1-12-12A12,12,0,0,1,140,128Z"></path></svg>
                             </button>
+                            <button onclick="openRankingModal()" class="p-2 bg-purple-600/20 hover:bg-purple-600/40 rounded-lg border border-purple-500/30 transition-all" title="Ranking HUD">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#a855f7" viewBox="0 0 256 256"><path d="M232,208a8,8,0,0,1-8,8H32a8,8,0,0,1,0-16H224A8,8,0,0,1,232,208ZM40,168a8,8,0,0,0,8,8H80a8,8,0,0,0,8-8V104a8,8,0,0,0-8-8H48a8,8,0,0,0-8,8Zm120,0a8,8,0,0,0,8,8h32a8,8,0,0,0,8-8V40a8,8,0,0,0-8-8H168a8,8,0,0,0-8,8Zm-64,0a8,8,0,0,0,8,8h32a8,8,0,0,0,8-8V72a8,8,0,0,0-8-8H104a8,8,0,0,0-8,8Z"></path></svg>
+                            </button>
                             <button id="btn-open-faction" onclick="openFactionModal()" class="hidden p-2 bg-emerald-600/20 hover:bg-emerald-600/40 rounded-lg border border-emerald-500/30 transition-all" title="Create Faction">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#10b981" viewBox="0 0 256 256"><path d="M200,128a72,72,0,1,1-72-72A72,72,0,0,1,200,128Z" opacity="0.2"></path><path d="M128,48a80,80,0,1,0,80,80A80.09,80.09,0,0,0,128,48Zm0,144a64,64,0,1,1,64-64A64.07,64.07,0,0,1,128,192Zm40-64a8,8,0,0,1-8,8H136v32a8,8,0,0,1-16,0V136H88a8,8,0,0,1,0-16h32V88a8,8,0,0,1,16,0v32h24A8,8,0,0,1,168,128Z"></path></svg>
                             </button>
                         </div>
-                        <select id="leaderboard-select" onchange="state.leaderboardMode = this.value; updateLeaderboard()" class="bg-slate-800 border border-slate-700 rounded-lg text-[9px] font-bold text-white px-2 py-1 outline-none focus:border-blue-500" title="Select Leaderboard">
-                            <option value="tiles">Territory Size</option>
-                            <option value="ovcd">OVCD (Dev)</option>
-                            <option value="wars">Wars Won</option>
-                            <option value="cities">City Count</option>
-                            <option value="balance">Value Balance</option>
-                            <option value="dams">Dams</option>
-                            <option value="cost">Tile Cost</option>
-                        </select>
+                        <div class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Global Ranking</div>
                     </div>
                     <div id="leaderboard-list" class="space-y-1 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
                         <!-- Leaderboard items will be injected here -->
@@ -3656,6 +3684,11 @@
             }
             document.getElementById('btn-open-faction').classList.toggle('hidden', allies.length < 3);
 
+            // Update Ranking HUD if modal is open
+            if (!document.getElementById('ranking-modal').classList.contains('hidden')) {
+                updateRankingUI();
+            }
+
             // 100x Cost Indicator during war (for player)
             const playerEntity = state.entities[1];
             const playerActiveWar = state.wars.find(w => w.active && (w.host === 1 || w.target === 1 || w.allies.includes(1) || w.targetAllies.includes(1)));
@@ -3736,6 +3769,129 @@
             updateLeaderboard();
         }
 
+        function openRankingModal() {
+            document.getElementById('ranking-modal').classList.remove('hidden');
+            if (!state.activeRankingTab) state.activeRankingTab = 'powerIndex';
+            updateRankingUI();
+        }
+
+        function closeRankingModal() {
+            document.getElementById('ranking-modal').classList.add('hidden');
+        }
+
+        function setRankingTab(tab) {
+            state.activeRankingTab = tab;
+            const tabs = ['powerIndex', 'tiles', 'cities', 'balance', 'ovcd', 'wars', 'dams'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab-rank-${t}`);
+                if (t === tab) {
+                    btn.className = 'w-full text-left p-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all bg-purple-600 text-white shadow-lg';
+                } else {
+                    btn.className = 'w-full text-left p-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all text-slate-500 hover:bg-slate-800';
+                }
+            });
+            
+            const titles = {
+                powerIndex: 'Power Index Ranking',
+                tiles: 'Territory Size Ranking',
+                cities: 'City Count Ranking',
+                balance: 'Treasury Balance Ranking',
+                ovcd: 'Development Level Ranking',
+                wars: 'Military Wins Ranking',
+                dams: 'Infrastructure Ranking'
+            };
+            document.getElementById('ranking-title').innerText = titles[tab];
+            updateRankingUI();
+        }
+
+        function updateRankingUI() {
+            const container = document.getElementById('ranking-chart-container');
+            if (!container || document.getElementById('ranking-modal').classList.contains('hidden')) return;
+
+            const mode = state.activeRankingTab;
+            
+            const data = state.entities.slice(1).map((e, idx) => {
+                const entityIdx = idx + 1;
+                let val = 0;
+                let display = '';
+                
+                switch(mode) {
+                    case 'powerIndex': val = e.powerIndex; display = val.toFixed(4); break;
+                    case 'tiles': val = e.ownedCount; display = val.toLocaleString(); break;
+                    case 'cities': val = e.cityCount; display = val.toLocaleString(); break;
+                    case 'balance': val = e.balance === Infinity ? 999999999999 : e.balance; display = e.balance === Infinity ? 'inf' : `$${Math.floor(val).toLocaleString()}`; break;
+                    case 'ovcd': val = e.ovcd; display = val.toFixed(1); break;
+                    case 'wars': val = e.warsWon; display = val.toLocaleString(); break;
+                    case 'dams': val = e.damCount; display = val.toLocaleString(); break;
+                }
+                
+                return { name: e.name, color: e.color, val, display, isPlayer: e.type === 'player' };
+            });
+
+            // Sort by value
+            data.sort((a, b) => b.val - a.val);
+            const maxVal = data.length > 0 ? Math.max(...data.map(d => d.val)) : 1;
+
+            container.innerHTML = data.map((item, index) => {
+                const width = Math.max(5, (item.val / maxVal) * 100);
+                return `
+                    <div class="flex flex-col gap-1">
+                        <div class="flex justify-between items-end mb-1">
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] font-black text-slate-600 w-4">${index + 1}</span>
+                                <span class="text-xs font-bold ${item.isPlayer ? 'text-blue-400' : 'text-white'}">${item.name}</span>
+                            </div>
+                            <span class="text-[10px] font-mono font-bold text-slate-400">${item.display}</span>
+                        </div>
+                        <div class="h-3 w-full bg-slate-800/50 rounded-full overflow-hidden border border-white/5">
+                            <div class="h-full transition-all duration-500 rounded-full" 
+                                 style="width: ${width}%; background-color: ${item.color}; box-shadow: 0 0 10px ${item.color}44"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function calculatePowerIndex(entityIdx) {
+            const e = state.entities[entityIdx];
+            if (!e || e.ownedCount === 0) return 0;
+
+            // 1. Territory Factor (0-4 points)
+            const territoryScore = Math.min(4, e.ownedCount / 5000); 
+            
+            // 2. City & Development Factor (0-3 points)
+            const cityScore = Math.min(2, e.cityCount / 20);
+            const devScore = Math.min(1, e.ovcd / 8);
+            
+            // 3. Wealth Factor (0-1.5 points)
+            let wealthScore = 0;
+            if (e.balance === Infinity) {
+                wealthScore = 1.5;
+            } else {
+                wealthScore = Math.min(1.5, Math.log10(Math.max(1, e.balance)) / 10);
+            }
+            
+            // 4. Military Factor (0-1.5 points)
+            const warScore = Math.min(1.5, e.warsWon * 0.15);
+            
+            // 5. Research Factor (only for player, 0-1 point)
+            let researchScore = 0;
+            if (entityIdx === 1) {
+                const totalLevels = Object.values(state.research.trees).reduce((sum, tree) => {
+                    return sum + Object.values(tree).reduce((s, val) => s + val, 0);
+                }, 0);
+                researchScore = Math.min(1, totalLevels / 100);
+            } else {
+                // Bots get a small bonus based on difficulty
+                const diffBonus = { 'ez': 0.1, 'strategic': 0.3, 'hard': 0.5, 'insane': 0.8 };
+                researchScore = diffBonus[e.difficulty] || 0.1;
+            }
+
+            const total = territoryScore + cityScore + devScore + wealthScore + warScore + researchScore;
+            // Normalize to 1-digit 4-decimal (e.g. 0.0000 to 9.9999)
+            return Math.min(9.9999, total);
+        }
+
         function updateLeaderboard() {
             const listEl = document.getElementById('leaderboard-list');
             if (!listEl) return;
@@ -3763,29 +3919,21 @@
             state.entities.forEach((entity, eIdx) => {
                 if (eIdx === 0) return;
                 entity.ovcd = cityCounts[eIdx] > 0 ? parseFloat((entity.tempTotalLevel / cityCounts[eIdx]).toFixed(1)) : 0;
+                // Calculate Power Index
+                entity.powerIndex = calculatePowerIndex(eIdx);
             });
 
             // Prepare list of entities (excluding WILD)
             const leaderboardData = state.entities.slice(1).map((e, idx) => {
                 const entityIdx = idx + 1; // Real index in state.entities
-                let value = 0;
-                let suffix = '';
-                const activeWar = state.wars.find(w => w.active && (w.host === entityIdx || w.target === entityIdx || w.allies.includes(entityIdx)));
-                
-                switch (state.leaderboardMode) {
-                    case 'tiles': value = e.ownedCount; suffix = ' Tiles'; break;
-                    case 'ovcd': value = e.ovcd; suffix = ' LVL'; break;
-                    case 'wars': value = e.warsWon; suffix = ' Wins'; break;
-                    case 'cities': value = e.cityCount; suffix = ' Cities'; break;
-                    case 'balance': 
-                        value = e.balance === Infinity ? 'inf' : Math.floor(e.balance); 
-                        suffix = ''; break;
-                    case 'dams': value = e.damCount; suffix = ' Dams'; break;
-                    case 'cost': 
-                        let cost = e.tileCost * getWarCostMultiplier(entityIdx);
-                        value = Math.floor(cost); suffix = ''; break;
-                }
-                return { name: e.name, color: e.color, value: value, suffix, id: e.id, isPlayer: e.type === 'player', ownedCount: e.ownedCount };
+                return { 
+                    name: e.name, 
+                    color: e.color, 
+                    value: e.powerIndex, 
+                    id: e.id, 
+                    isPlayer: e.type === 'player', 
+                    ownedCount: e.ownedCount 
+                };
             });
 
             // Find the leader by territory size (ownedCount)
@@ -3794,17 +3942,13 @@
                 if (item.ownedCount > maxTiles) maxTiles = item.ownedCount;
             });
 
-            // Sort by value descending
-            leaderboardData.sort((a, b) => {
-                if (a.value === 'inf') return -1;
-                if (b.value === 'inf') return 1;
-                return b.value - a.value;
-            });
+            // Sort by Power Index descending
+            leaderboardData.sort((a, b) => b.value - a.value);
 
             // Render
             listEl.innerHTML = leaderboardData.map((item, index) => {
                 const isLeader = maxTiles > 0 && item.ownedCount === maxTiles;
-                const displayValue = item.value === 'inf' ? 'inf' : Number(item.value).toLocaleString();
+                const displayValue = item.value.toFixed(4);
                 return `
                 <div class="flex justify-between items-center bg-slate-800/30 p-2 rounded-lg border border-white/5 ${item.isPlayer ? 'ring-1 ring-blue-500/50 bg-blue-500/10' : ''}">
                     <div class="flex items-center gap-2 overflow-hidden">
@@ -3813,7 +3957,7 @@
                         <span class="text-[9px] font-bold text-white truncate max-w-[80px]">${item.name} ${isLeader ? '👑' : ''}</span>
                     </div>
                     <div class="text-[9px] font-mono font-black ${item.isPlayer ? 'text-blue-400' : 'text-slate-400'}">
-                        ${state.leaderboardMode === 'balance' || state.leaderboardMode === 'cost' ? '$' : ''}${displayValue}${item.suffix}
+                        ${displayValue} <span class="text-[7px] text-slate-600 ml-0.5">PWR</span>
                     </div>
                 </div>
             `;}).join('');
