@@ -4555,28 +4555,26 @@
             if (!e || e.ownedCount === 0) return 0;
 
             // Helper to safely get a finite log value
-            const safeLog = (val, base = 10) => {
-                if (val === Infinity) return 308; // Close to max double log10
+            const safeLog = (val) => {
+                if (val === Infinity) return 308; 
+                if (isNaN(val)) return 0;
                 return Math.log10(Math.max(1, val));
             };
 
-            // 1. Territory Factor (Uncapped log scaling)
-            // 1.0 score for 1000 tiles.
+            // 1. Territory Factor
             const territoryScore = safeLog(e.ownedCount) * 0.8; 
             
-            // 2. Population Factor (Log scaling for extreme values)
-            // 1.0 score for ~100k population.
+            // 2. Population Factor
             const popScore = e.totalPopulation > 100000 ? 1.0 + safeLog(e.totalPopulation / 100000) : (e.totalPopulation || 0) / 100000;
 
-            // 3. Income Factor (Log scaling for extreme values)
-            // 1.0 score for $10k income per tick.
+            // 3. Income Factor
             const incomeScore = e.totalIncome > 10000 ? 1.0 + safeLog(e.totalIncome / 10000) : (e.totalIncome || 0) / 10000;
 
             // 4. City & Development Factor
             const cityScore = e.cityCount / 20;
             const devScore = (e.ovcd || 0) / 8;
             
-            // 5. Wealth Factor (Uncapped log scaling)
+            // 5. Wealth Factor
             const wealthScore = safeLog(e.balance) / 10;
             
             // 6. Military Factor
@@ -4605,20 +4603,25 @@
                 researchScore = diffBonus[e.difficulty] || 0.1;
             }
 
-            // 10. Efficiency/Expense Penalty
-            // Penalty scales with the ratio of expense to income, but capped to prevent NaN/Infinity
+            // 10. Efficiency/Expense Penalty (Rebalanced for War)
+            // Penalty scales with the ratio of expense to income, but handles Infinity safely.
             let expensePenalty = 0;
-            if (e.totalIncome > 0) {
-                expensePenalty = Math.min(5.0, (e.totalExpense || 0) / e.totalIncome);
-            } else if (e.totalExpense > 0) {
-                expensePenalty = 5.0; // Maximum penalty if expenses exist with no income
+            if (e.totalExpense > 0) {
+                if (e.totalIncome === Infinity && e.totalExpense === Infinity) {
+                    expensePenalty = 0.5; // Balanced penalty for infinite vs infinite
+                } else if (e.totalIncome > 0) {
+                    // Penalty is capped at 2.0 to prevent total score wipeout for huge entities
+                    expensePenalty = Math.min(2.0, (e.totalExpense / e.totalIncome) * 0.5);
+                } else {
+                    expensePenalty = 2.0; // Max penalty if expenses exist with zero income
+                }
             }
 
             const total = territoryScore + popScore + incomeScore + cityScore + devScore + wealthScore + warScore + damScore + allianceScore + researchScore - expensePenalty;
             
-            // Final check for safety
-            if (isNaN(total) || total === Infinity) return 999.999999;
-            if (total === -Infinity) return 0;
+            // Final safety checks
+            if (isNaN(total)) return 0;
+            if (total === Infinity) return 999.999999;
             
             return Math.max(0, total);
         }
