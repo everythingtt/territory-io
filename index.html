@@ -3307,7 +3307,33 @@
             
             setTimeout(() => { 
                 state.launchedMissiles.delete(targetIdx);
-                claim(tx, ty, true, 1); 
+                
+                const annexLevel = state.research.trees.military.annexRadius || 0;
+                if (annexLevel > 0) {
+                    const annexRadius = 1 + (annexLevel * 4.23);
+                    for (let iy = -annexRadius; iy <= annexRadius; iy++) {
+                        for (let ix = -annexRadius; ix <= annexRadius; ix++) {
+                            const dist = Math.sqrt(ix*ix + iy*iy);
+                            if (dist <= annexRadius) {
+                                const nX = Math.floor(tx + ix);
+                                const nY = Math.floor(ty + iy);
+                                if (nX >= 0 && nX < CONFIG.COLS && nY >= 0 && nY < CONFIG.ROWS) {
+                                    const nIdx = nY * CONFIG.COLS + nX;
+                                    const nOwner = state.tileOwners[nIdx];
+                                    const nType = state.tileTypes[nIdx];
+                                    // Claim if WILD (unowned) and it's land
+                                    if (nOwner === 0 && nType === 1) {
+                                        claim(nX, nY, true, 1, true);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    drawRegion(tx - annexRadius - 1, ty - annexRadius - 1, tx + annexRadius + 1, ty + annexRadius + 1);
+                } else {
+                    claim(tx, ty, true, 1);
+                }
+                
                 plane.remove(); 
             }, 2500);
         }
