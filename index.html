@@ -1796,7 +1796,8 @@
                 const war = state.wars.find(w => w.id === state.planning.warId);
                 
                 // Allow selecting enemy tiles (except dam water) if within range or reachable
-                if (ownerIdx === war.target && type !== 4 && !state.planning.turns[state.planning.activeTurn].includes(idx)) {
+                const isEnemy = ownerIdx !== 0 && ownerIdx !== 1 && (ownerIdx === war.target || war.targetAllies.includes(ownerIdx));
+                if (isEnemy && type !== 4 && !state.planning.turns[state.planning.activeTurn].includes(idx)) {
                     // Check distance from capital for Air Support
                     const cx = state.entities[1].capitalPos.x, cy = state.entities[1].capitalPos.y;
                     const dist = Math.sqrt(Math.pow(x - cx, 2) + Math.pow(y - cy, 2));
@@ -2246,11 +2247,11 @@
             document.getElementById('total-plan-cost').innerText = costLabel;
             document.getElementById('hud-plan-cost').innerText = `Cost: $${Math.floor(totalCost).toLocaleString()}`;
 
-            // Validate Deploy Button (At least 5 turns with >= 1 tile)
+            // Validate Deploy Button (At least 1 turn with >= 1 tile)
             const filledTurns = state.planning.turns.filter(t => t.length > 0).length;
             const deployBtn = document.getElementById('deploy-plan-btn');
             
-            if (filledTurns >= 5) {
+            if (filledTurns >= 1) {
                 deployBtn.disabled = false;
                 deployBtn.className = "flex-1 bg-red-600 py-4 rounded-2xl font-bold text-white uppercase tracking-widest text-[10px] shadow-lg shadow-red-600/20";
             } else {
@@ -2286,8 +2287,8 @@
             }
 
             const filledTurns = state.planning.turns.filter(t => t.length > 0).length;
-            if (filledTurns < 5) {
-                notify("Assault Plan requires at least 5 turns with selected tiles.", "error");
+            if (filledTurns < 1) {
+                notify("Assault Plan requires at least 1 turn with selected tiles.", "error");
                 return;
             }
 
@@ -2400,7 +2401,7 @@
                     const type = state.tileTypes[idx];
                     
                     // Claim for player if still owned by enemy (target or ally of target)
-                    if (oldOwner === activeWar.target || activeWar.allies.includes(oldOwner)) {
+                    if (oldOwner !== 0 && oldOwner !== 1 && (oldOwner === activeWar.target || activeWar.targetAllies.includes(oldOwner))) {
                         const neighbors = [idx-1, idx+1, idx-CONFIG.COLS, idx+CONFIG.COLS];
                         const isReachable = neighbors.some(n => n >= 0 && n < state.tileTypes.length && (state.tileOwners[n] === 1 || state.alliances.has(`1-${state.tileOwners[n]}`) || state.alliances.has(`${state.tileOwners[n]}-1`)));
                         
@@ -2461,7 +2462,9 @@
                             }, 1000);
                         }
 
-                        state.balance -= actualCost;
+                        if (state.balance !== Infinity) {
+                            state.balance -= actualCost;
+                        }
                         state.entities[1].balance = state.balance; 
                         playerEntity.tileCost += 0.25; 
 
