@@ -627,11 +627,84 @@
                             </div>
                             <button onclick="upgradeResearch('economic', 'rebuildCost')" class="bg-blue-600 px-6 py-3 rounded-xl font-bold text-xs text-white shadow-lg hover:scale-105 transition-all">UPGRADE (1T)</button>
                         </div>
+                        <div class="bg-slate-800/50 p-6 rounded-2xl border border-white/5 flex justify-between items-center">
+                            <div>
+                                <div class="font-bold text-white uppercase text-sm">Reduce War Balance Penalty</div>
+                                <div class="text-xs text-slate-500 mt-1">Levels 1-30: Reduce penalty from -0.5% to -0.01%</div>
+                            </div>
+                            <button onclick="upgradeResearch('economic', 'warPenalty', 30, 1)" class="bg-blue-600 px-6 py-3 rounded-xl font-bold text-xs text-white shadow-lg hover:scale-105 transition-all">UPGRADE (1T)</button>
+                        </div>
                     </div>
                 </div>
                 <!-- Other tabs will be handled via JS -->
             </div>
             <button onclick="closeResearch()" class="absolute top-6 right-6 text-slate-500 hover:text-white transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 256 256"><path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z"></path></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Management HUD Modal -->
+    <div id="management-modal" class="hidden fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[900] flex items-center justify-center p-6">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-5xl h-[700px] flex flex-col overflow-hidden shadow-2xl">
+            <!-- Header: Financial Overview -->
+            <div class="bg-slate-950/50 border-b border-slate-800 p-8 grid grid-cols-3 gap-8">
+                <div class="bg-slate-800/30 p-6 rounded-2xl border border-white/5">
+                    <div class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">Total Income</div>
+                    <div id="mgt-total-income" class="text-2xl font-black text-emerald-400">+$0</div>
+                    <div class="text-[9px] text-slate-600 mt-1 uppercase font-bold">Consistent base revenue</div>
+                </div>
+                <div class="bg-slate-800/30 p-6 rounded-2xl border border-white/5">
+                    <div class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">Total Expenses</div>
+                    <div id="mgt-total-expense" class="text-2xl font-black text-red-400">-$0</div>
+                    <div id="mgt-expense-reason" class="text-[9px] text-slate-600 mt-1 uppercase font-bold">No active expenses</div>
+                </div>
+                <div class="bg-slate-800/30 p-6 rounded-2xl border border-white/5">
+                    <div class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">Overall Balance</div>
+                    <div id="mgt-overall-income" class="text-2xl font-black text-blue-400">+$0</div>
+                    <div class="text-[9px] text-slate-600 mt-1 uppercase font-bold">Net treasury flow per tick</div>
+                </div>
+            </div>
+
+            <!-- Tab Buttons -->
+            <div class="px-8 py-4 flex gap-4 bg-slate-900/50 border-b border-slate-800">
+                <button onclick="setManagementTab('cities')" id="tab-mgt-cities" class="px-6 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all bg-blue-600 text-white shadow-lg">Cities & Population</button>
+                <button onclick="setManagementTab('investments')" id="tab-mgt-investments" class="px-6 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all text-slate-500 hover:bg-slate-800">Investments</button>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="flex-1 p-8 overflow-y-auto custom-scrollbar">
+                <!-- Cities Tab -->
+                <div id="mgt-content-cities" class="space-y-6">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-xl font-bold text-white uppercase italic">City Rankings</h3>
+                        <button onclick="bulkDevelopCities()" class="bg-blue-600 px-6 py-2.5 rounded-xl font-bold text-[10px] text-white shadow-lg hover:scale-105 transition-all uppercase tracking-widest">Bulk Develop All ($100/City)</button>
+                    </div>
+                    <div id="mgt-cities-list" class="grid grid-cols-1 gap-3">
+                        <!-- City list injected here -->
+                    </div>
+                </div>
+
+                <!-- Investments Tab -->
+                <div id="mgt-content-investments" class="hidden space-y-6">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-xl font-bold text-white uppercase italic">Available Projects</h3>
+                        <div class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Projects last 3-10 cycles</div>
+                    </div>
+                    <div id="mgt-investments-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Investment list injected here -->
+                    </div>
+                    <div class="mt-8 pt-8 border-t border-slate-800">
+                        <h3 class="text-sm font-black text-slate-500 uppercase tracking-widest mb-4">Active Investments</h3>
+                        <div id="mgt-active-investments" class="space-y-3">
+                            <!-- Active investments here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer / Close -->
+            <button onclick="closeManagement()" class="absolute top-6 right-6 text-slate-500 hover:text-white transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 256 256"><path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z"></path></svg>
             </button>
         </div>
@@ -777,6 +850,9 @@
                             </button>
                             <button onclick="openRankingModal()" class="p-2 bg-purple-600/20 hover:bg-purple-600/40 rounded-lg border border-purple-500/30 transition-all" title="Ranking HUD">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#a855f7" viewBox="0 0 256 256"><path d="M232,208a8,8,0,0,1-8,8H32a8,8,0,0,1,0-16H224A8,8,0,0,1,232,208ZM40,168a8,8,0,0,0,8,8H80a8,8,0,0,0,8-8V104a8,8,0,0,0-8-8H48a8,8,0,0,0-8,8Zm120,0a8,8,0,0,0,8,8h32a8,8,0,0,0,8-8V40a8,8,0,0,0-8-8H168a8,8,0,0,0-8,8Zm-64,0a8,8,0,0,0,8,8h32a8,8,0,0,0,8-8V72a8,8,0,0,0-8-8H104a8,8,0,0,0-8,8Z"></path></svg>
+                            </button>
+                            <button onclick="openManagement()" class="p-2 bg-emerald-600/20 hover:bg-emerald-600/40 rounded-lg border border-emerald-500/30 transition-all" title="Management HUD">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#10b981" viewBox="0 0 256 256"><path d="M224,120v16a8,8,0,0,1-8,8H144v72a8,8,0,0,1-8,8H120a8,8,0,0,1-8-8V144H40a8,8,0,0,1-8-8V120a8,8,0,0,1,8-8h72V40a8,8,0,0,1,8-8h16a8,8,0,0,1,8,8v72h72A8,8,0,0,1,224,120Z"></path></svg>
                             </button>
                             <button id="btn-open-faction" onclick="openFactionModal()" class="hidden p-2 bg-emerald-600/20 hover:bg-emerald-600/40 rounded-lg border border-emerald-500/30 transition-all" title="Create Faction">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#10b981" viewBox="0 0 256 256"><path d="M200,128a72,72,0,1,1-72-72A72,72,0,0,1,200,128Z" opacity="0.2"></path><path d="M128,48a80,80,0,1,0,80,80A80.09,80.09,0,0,0,128,48Zm0,144a64,64,0,1,1,64-64A64.07,64.07,0,0,1,128,192Zm40-64a8,8,0,0,1-8,8H136v32a8,8,0,0,1-16,0V136H88a8,8,0,0,1,0-16h32V88a8,8,0,0,1,16,0v32h24A8,8,0,0,1,168,128Z"></path></svg>
@@ -932,6 +1008,8 @@
             tileOwners: new Uint8Array(384 * 216),
             // 0-8: development level (hj)
             cityLevels: new Uint8Array(384 * 216), 
+            // 0-5000: city population
+            cityPopulations: new Uint32Array(384 * 216),
             // Bitmask: 1: being built, 2: is city/capital, 4: has label, 8: dam-ready, 16: border (rre5), 32: dam-icon
             tileFlags: new Uint8Array(384 * 216),
             
@@ -944,13 +1022,16 @@
                 tokens: 5,
                 trees: {
                     base: { paintCapacity: 0 },
-                    economic: { tileCost: 0, rebuildCost: 0, maxBalance: 0 },
+                    economic: { tileCost: 0, rebuildCost: 0, maxBalance: 0, warPenalty: 0 },
                     military: { warMissile: 0, warplane: 0, warTileCost: 0 },
                     tokens: { miner: 0 },
                     political: {}
                 },
                 lastMinerTick: Date.now()
             },
+            
+            investments: [], // Active investments: { id, name, bonus, scale, remainingTicks }
+            management: { activeTab: 'cities' },
             
             planning: { active: false, turns: Array.from({length: 10}, () => []), activeTurn: 0, warId: null, assaultType: 'support' },
             botAllyCooldowns: {}, // { entityIdx: timestamp }
@@ -2204,6 +2285,7 @@
                 targetAllies: [], // Defender allies
                 justification: 0,
                 requiredCycles: requiredCycles,
+                justificationTicks: 0, // Track ticks within the cycle
                 active: false,
                 isBotWar: isBotInitiated,
                 botAssaultTimer: 0,
@@ -3182,24 +3264,33 @@
                      // Update War Justifications
                 state.wars.forEach(war => {
                     if (!war.active && war.justification < war.requiredCycles) {
-                        war.justification++;
-                        if (war.justification >= war.requiredCycles) {
-                            war.active = true;
-                            // Update initial tiles at the moment war starts
-                            war.initialTiles[war.host] = state.entities[war.host].ownedCount;
-                            war.initialTiles[war.target] = state.entities[war.target].ownedCount;
-                            war.allies.forEach(aIdx => war.initialTiles[aIdx] = state.entities[aIdx].ownedCount);
+                        // Use Cycle/Tick system for justification
+                        war.justificationTicks++;
+                        if (war.justificationTicks >= 10) {
+                            war.justificationTicks = 0;
+                            war.justification++;
+                            
+                            if (war.justification >= war.requiredCycles) {
+                                war.active = true;
+                                // Update initial tiles at the moment war starts
+                                war.initialTiles[war.host] = state.entities[war.host].ownedCount;
+                                war.initialTiles[war.target] = state.entities[war.target].ownedCount;
+                                war.allies.forEach(aIdx => war.initialTiles[aIdx] = state.entities[aIdx].ownedCount);
 
-                            notify(`WAR DECLARED! ${state.entities[war.host].name} vs ${state.entities[war.target].name}`, 'war', state.entities[war.target].capitalPos.x, state.entities[war.target].capitalPos.y);
+                                notify(`WAR DECLARED! ${state.entities[war.host].name} vs ${state.entities[war.target].name}`, 'war', state.entities[war.target].capitalPos.x, state.entities[war.target].capitalPos.y);
+                            }
                         }
+                        
                         // Update UI if diplomacy modal is open for this target
                         if (state.activeDiploIdx === war.target) {
                             const bar = document.getElementById('justification-bar');
                             const timer = document.getElementById('justification-timer');
                             if (bar && timer) {
-                                const pct = (war.justification / war.requiredCycles) * 100;
+                                const totalTicks = war.requiredCycles * 10;
+                                const currentTicks = (war.justification * 10) + war.justificationTicks;
+                                const pct = (currentTicks / totalTicks) * 100;
                                 bar.style.width = `${pct}%`;
-                                timer.innerText = `${war.justification}/${war.requiredCycles} Cycles`;
+                                timer.innerText = `${war.justification}.${war.justificationTicks}/${war.requiredCycles}.0 Cycles`;
                             }
                         }
                     }
@@ -3270,18 +3361,50 @@
                     globalDevBonus = (state.ownedCount * 0.50) * globalMultiplier;
                 }
                 
-                // Research Max Balance Bonus (Levels 1-100: +50% to +10000%)
                 const resMaxBalanceBonus = getResearchBonus('economic', 'maxBalance', 100, 0.5, 100);
                 const maxBalance = baseMax * (cityMultiplier + devMaxMultiplier) * (1 + resMaxBalanceBonus);
                 
                 const rate = Math.max(0.01, 0.07 - (0.06/0.69)*((state.balance/maxBalance)-0.01));
-                const income = state.ownedCount + (state.balance * rate) + (state.cityCount * CONFIG.CITY_BONUS) + (state.hasCapital ? CONFIG.CAPITAL_BONUS : 0) + (state.damCount * CONFIG.DAM_BONUS);
+                const baseIncome = state.ownedCount + (state.balance * rate) + (state.cityCount * CONFIG.CITY_BONUS) + (state.hasCapital ? CONFIG.CAPITAL_BONUS : 0) + (state.damCount * CONFIG.DAM_BONUS);
                 
+                // Investment Bonuses
+                const investmentMultiplier = state.investments.reduce((sum, inv) => sum + inv.bonus, 0);
+                const investmentIncome = (baseIncome + devBonus + globalDevBonus) * investmentMultiplier;
+                
+                const totalIncome = baseIncome + devBonus + globalDevBonus + investmentIncome;
+                
+                // War Penalty (-0.5% balance per tick, reduced by research)
+                let warPenalty = 0;
+                const playerActiveWar = state.wars.find(w => w.active && (w.host === 1 || w.target === 1 || w.allies.includes(1) || w.targetAllies.includes(1)));
+                if (playerActiveWar) {
+                    const basePenaltyRate = 0.005; // 0.5%
+                    const resPenaltyDiscount = getResearchBonus('economic', 'warPenalty', 30, 0.01, 0.98); // 1% to 98% reduction
+                    const finalPenaltyRate = basePenaltyRate * (1 - resPenaltyDiscount);
+                    warPenalty = state.balance * finalPenaltyRate;
+                }
+
                 if (state.balance !== Infinity) {
-                    state.balance = Math.min(maxBalance, state.balance + income + devBonus + globalDevBonus);
+                    state.balance = Math.min(maxBalance, state.balance + totalIncome - warPenalty);
                 }
                 state.entities[1].balance = state.balance; // Keep in sync
                 state.cycleTimer++;
+
+                // City Population Increase & Investment Ticks
+                for (const idx of state.cityIndices) {
+                    if (state.tileOwners[idx] === 1) {
+                        const level = state.cityLevels[idx];
+                        // Pop increase: 10 + (level * 5) per tick
+                        const increase = 10 + (level * 5);
+                        state.cityPopulations[idx] = Math.min(5000, state.cityPopulations[idx] + increase);
+                    }
+                }
+                state.investments.forEach((inv, i) => {
+                    inv.remainingTicks--;
+                    if (inv.remainingTicks <= 0) {
+                        state.investments.splice(i, 1);
+                        notify(`Investment Project ${inv.name} has concluded.`, "info");
+                    }
+                });
 
                 // Player Paralysis Check
                 if (state.cycleTimer === 10 && state.entities[1].paralyzedCycles > 0) {
@@ -3290,13 +3413,18 @@
                 }
 
                 if (state.cycleTimer >= CONFIG.CYCLE) {
-                    const bonus = income + (state.ownedCount * 2);
+                    const bonus = totalIncome + (state.ownedCount * 2);
                     if (state.balance !== Infinity) {
                         state.balance = Math.min(maxBalance, state.balance + bonus);
                     }
                     state.entities[1].balance = state.balance; // Keep in sync
                     state.cycleTimer = 0;
                     spawnPop(bonus);
+                    
+                    // Trigger UI updates for Management if open
+                    if (!document.getElementById('management-modal').classList.contains('hidden')) {
+                        updateManagementUI();
+                    }
                 }
                 updateUI(maxBalance);
 
@@ -3973,6 +4101,222 @@
                     </div>
                 `;
             }).join('');
+        }
+
+        function openManagement() {
+            document.getElementById('management-modal').classList.remove('hidden');
+            if (!state.management.activeTab) state.management.activeTab = 'cities';
+            updateManagementUI();
+        }
+
+        function closeManagement() {
+            document.getElementById('management-modal').classList.add('hidden');
+        }
+
+        function setManagementTab(tab) {
+            state.management.activeTab = tab;
+            ['cities', 'investments'].forEach(t => {
+                const btn = document.getElementById(`tab-mgt-${t}`);
+                const content = document.getElementById(`mgt-content-${t}`);
+                if (t === tab) {
+                    btn.className = 'px-6 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all bg-blue-600 text-white shadow-lg';
+                    if (content) content.classList.remove('hidden');
+                } else {
+                    btn.className = 'px-6 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all text-slate-500 hover:bg-slate-800';
+                    if (content) content.classList.add('hidden');
+                }
+            });
+            updateManagementUI();
+        }
+
+        function updateManagementUI() {
+            if (document.getElementById('management-modal').classList.contains('hidden')) return;
+
+            // 1. Financial Overview
+            const playerEntity = state.entities[1];
+            const playerActiveWar = state.wars.find(w => w.active && (w.host === 1 || w.target === 1 || w.allies.includes(1) || w.targetAllies.includes(1)));
+            
+            // Income calculation
+            const baseIncome = state.ownedCount * (CONFIG.VAL_PER_TILE / 10);
+            const cityBonus = (state.cityCount * CONFIG.CITY_BONUS);
+            const totalCityLevels = Array.from(state.cityIndices).reduce((sum, idx) => {
+                return state.tileOwners[idx] === 1 ? sum + state.cityLevels[idx] : sum;
+            }, 0);
+            const devBonus = baseIncome * (totalCityLevels * 0.05);
+            
+            // Investment Bonuses
+            const investmentMultiplier = state.investments.reduce((sum, inv) => sum + inv.bonus, 0);
+            const investmentIncome = (baseIncome + cityBonus + devBonus) * investmentMultiplier;
+            
+            const totalIncome = baseIncome + cityBonus + devBonus + investmentIncome;
+            
+            // Expense calculation
+            let totalExpense = 0;
+            let expenseReason = "No active expenses";
+            if (playerActiveWar) {
+                const warPenaltyBase = 0.005; // 0.5%
+                const resDiscount = getResearchBonus('economic', 'warPenalty', 30, 0.01, 0.98); // scales from 0% to ~98% reduction
+                const penaltyRate = warPenaltyBase * (1 - resDiscount);
+                totalExpense = state.balance * penaltyRate;
+                expenseReason = `War penalty (${(penaltyRate * 100).toFixed(3)}% / tick)`;
+            }
+
+            const netIncome = totalIncome - totalExpense;
+
+            document.getElementById('mgt-total-income').innerText = `+$${Math.floor(totalIncome).toLocaleString()}`;
+            document.getElementById('mgt-total-expense').innerText = `-$${Math.floor(totalExpense).toLocaleString()}`;
+            document.getElementById('mgt-expense-reason').innerText = expenseReason;
+            document.getElementById('mgt-overall-income').innerText = (netIncome >= 0 ? '+' : '-') + `$${Math.floor(Math.abs(netIncome)).toLocaleString()}`;
+            document.getElementById('mgt-overall-income').className = netIncome >= 0 ? 'text-2xl font-black text-emerald-400' : 'text-2xl font-black text-red-400';
+
+            // 2. Tab Content
+            if (state.management.activeTab === 'cities') {
+                renderManagementCities();
+            } else if (state.management.activeTab === 'investments') {
+                renderManagementInvestments();
+            }
+        }
+
+        function renderManagementCities() {
+            const container = document.getElementById('mgt-cities-list');
+            const playerCities = Array.from(state.cityIndices)
+                .filter(idx => state.tileOwners[idx] === 1)
+                .map(idx => ({
+                    idx,
+                    level: state.cityLevels[idx],
+                    pop: state.cityPopulations[idx],
+                    x: idx % CONFIG.COLS,
+                    y: Math.floor(idx / CONFIG.COLS)
+                }));
+
+            // Rank by level descending
+            playerCities.sort((a, b) => b.level - a.level || b.pop - a.pop);
+
+            if (playerCities.length === 0) {
+                container.innerHTML = '<div class="text-center py-12 text-slate-600 font-bold uppercase tracking-widest text-xs">No cities built yet</div>';
+                return;
+            }
+
+            container.innerHTML = playerCities.map((city, i) => `
+                <div class="bg-slate-800/50 p-4 rounded-2xl border border-white/5 flex justify-between items-center">
+                    <div class="flex items-center gap-4">
+                        <div class="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center text-[10px] font-black text-slate-500 border border-white/5">${i + 1}</div>
+                        <div>
+                            <div class="text-xs font-bold text-white uppercase tracking-tighter">City @ ${city.x}, ${city.y}</div>
+                            <div class="text-[9px] text-slate-500 font-bold uppercase mt-0.5">Development Level ${city.level}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-8">
+                        <div class="text-right">
+                            <div class="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Population</div>
+                            <div class="text-xs font-mono font-black text-blue-400">${city.pop.toLocaleString()} / 5,000</div>
+                        </div>
+                        <button onclick="developCity(${city.idx})" class="bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 px-4 py-2 rounded-lg border border-blue-500/30 text-[9px] font-black uppercase transition-all">Develop</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function developCity(idx) {
+            if (state.balance < 100) { notify("Insufficient funds to develop city!", "error"); return; }
+            if (state.cityLevels[idx] >= 8) { notify("City is already fully developed!", "info"); return; }
+            
+            state.balance -= 100;
+            state.entities[1].balance = state.balance;
+            state.cityLevels[idx]++;
+            drawTile(idx % CONFIG.COLS, Math.floor(idx / CONFIG.COLS));
+            updateManagementUI();
+            notify("City developed!", "success");
+        }
+
+        function bulkDevelopCities() {
+            const playerCities = Array.from(state.cityIndices).filter(idx => state.tileOwners[idx] === 1 && state.cityLevels[idx] < 8);
+            if (playerCities.length === 0) { notify("No cities need development!", "info"); return; }
+            
+            const totalCost = playerCities.length * 100;
+            if (state.balance < totalCost) { notify(`Insufficient funds! Need $${totalCost.toLocaleString()}`, "error"); return; }
+            
+            state.balance -= totalCost;
+            state.entities[1].balance = state.balance;
+            playerCities.forEach(idx => {
+                state.cityLevels[idx]++;
+                drawTile(idx % CONFIG.COLS, Math.floor(idx / CONFIG.COLS));
+            });
+            updateManagementUI();
+            notify(`Bulk developed ${playerCities.length} cities!`, "success");
+        }
+
+        function renderManagementInvestments() {
+            const container = document.getElementById('mgt-investments-list');
+            const activeContainer = document.getElementById('mgt-active-investments');
+            
+            // Available Projects (randomly generated based on city count)
+            // For simplicity, we'll offer 2 standard projects
+            const projects = [
+                { id: 'tech_hub', name: 'Tech Hub Initiative', baseBonus: 0.04, desc: 'Urban modernization project started by local entrepreneurs.' },
+                { id: 'trade_route', name: 'Merchant Network', baseBonus: 0.06, desc: 'Local traders seeking capital to expand regional commerce.' }
+            ];
+
+            const playerCityCount = Array.from(state.cityIndices).filter(idx => state.tileOwners[idx] === 1).length;
+            
+            container.innerHTML = projects.map(p => {
+                // Scale bonus: base + (up to 8% based on cities, capped at 14% total)
+                const scale = Math.min(1, playerCityCount / 20);
+                const totalBonus = p.baseBonus + (scale * 0.08);
+                const cycles = 3 + Math.floor(Math.random() * 8); // 3-10 cycles
+                
+                return `
+                    <div class="bg-slate-800/50 p-6 rounded-2xl border border-white/5 flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-start mb-2">
+                                <h4 class="text-sm font-black text-white uppercase tracking-tight">${p.name}</h4>
+                                <div class="text-[10px] font-black text-emerald-400">+${(totalBonus * 100).toFixed(1)}% Income</div>
+                            </div>
+                            <p class="text-[10px] text-slate-500 leading-relaxed">${p.desc}</p>
+                            <div class="mt-4 flex gap-4">
+                                <div class="text-[9px] text-slate-600 font-bold uppercase">Scale: ${Math.floor(scale * 100)}% coverage</div>
+                                <div class="text-[9px] text-slate-600 font-bold uppercase">Duration: ${cycles} Cycles</div>
+                            </div>
+                        </div>
+                        <button onclick="investInProject('${p.id}', ${totalBonus}, ${cycles})" class="mt-6 w-full bg-amber-600 px-4 py-3 rounded-xl font-black text-[10px] text-white shadow-lg hover:scale-[1.02] transition-all uppercase tracking-widest">Invest (5 R-Tokens)</button>
+                    </div>
+                `;
+            }).join('');
+
+            // Active Investments
+            if (state.investments.length === 0) {
+                activeContainer.innerHTML = '<div class="text-[10px] text-slate-700 font-bold uppercase italic">No active investment projects</div>';
+            } else {
+                activeContainer.innerHTML = state.investments.map(inv => `
+                    <div class="bg-slate-900/50 p-4 rounded-xl border border-white/5 flex justify-between items-center">
+                        <div class="flex items-center gap-3">
+                            <div class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
+                            <span class="text-xs font-bold text-slate-300 uppercase">${inv.name}</span>
+                        </div>
+                        <div class="flex items-center gap-6">
+                            <span class="text-[10px] font-black text-emerald-400">+${(inv.bonus * 100).toFixed(1)}% Bonus</span>
+                            <span class="text-[10px] font-mono text-slate-500 uppercase">${inv.remainingTicks} ticks left</span>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function investInProject(id, bonus, cycles) {
+            if (state.research.tokens < 5) { notify("Not enough R-Tokens! Need 5T.", "error"); return; }
+            
+            state.research.tokens -= 5;
+            updateResearchUI();
+            
+            state.investments.push({
+                id: id + '_' + Date.now(),
+                name: id.replace('_', ' ').toUpperCase(),
+                bonus: bonus,
+                remainingTicks: cycles * 10 // Convert cycles to ticks
+            });
+            
+            updateManagementUI();
+            notify("Investment successful!", "success");
         }
 
         function calculatePowerIndex(entityIdx) {
