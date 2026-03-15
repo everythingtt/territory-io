@@ -1009,7 +1009,8 @@
             MAX_ZOOM: 3.0,
             ZOOM_STEP: 0.2,
             WAR_MISSILE_COST_MULT: 2,
-            WARPLANE_COST_MULT: 6
+            WARPLANE_COST_MULT: 6,
+            AIR_SUPPORT_RANGE: 200
         };
 
         const state = {
@@ -1483,11 +1484,12 @@
             // Draw decorations (Emojis)
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
+            ctx.fillStyle = 'white'; // Ensure emojis are visible and not using patterns
             const cx = (x + 0.5) * CONFIG.TILE_SIZE;
             const cy = (y + 0.5) * CONFIG.TILE_SIZE;
 
             if (flags & 32) { // Dam Icon (One per cluster)
-                ctx.font = '7px Arial'; ctx.fillStyle = 'white'; ctx.fillText('⚡', cx, cy);
+                ctx.font = '7px Arial'; ctx.fillText('⚡', cx, cy);
             } else if (type === 5) { // City
                 ctx.font = '8px Arial'; ctx.fillText('🏠', cx, cy);
             } else if (type === 6) { // Capital
@@ -1596,7 +1598,10 @@
                 }
             }
             drawRegion(sx, sy, sx + 5, sy + 5);
-            if (ownerIdx === 1) centerCameraOn(sx + 3, sy + 3);
+            if (ownerIdx === 1) {
+                centerCameraOn(sx + 3, sy + 3);
+                updateLabel();
+            }
         }
 
         function getWarCostMultiplier(entityIdx, ignoreTileResearch = false) {
@@ -1674,19 +1679,32 @@
             }
 
             // Update stats
-            if (oldOwnerIdx !== 0) state.entities[oldOwnerIdx].ownedCount--;
+            if (oldOwnerIdx !== 0) {
+                state.entities[oldOwnerIdx].ownedCount--;
+                // Handle city/capital capture
+                if (state.tileTypes[idx] === 5 || state.tileTypes[idx] === 6) {
+                    state.entities[oldOwnerIdx].cityCount--;
+                    if (oldOwnerIdx === 1) state.cityCount--;
+                    if (state.tileTypes[idx] === 6) {
+                        state.entities[oldOwnerIdx].hasCapital = false;
+                        state.entities[oldOwnerIdx].capitalPos = null;
+                    }
+                }
+            }
+            
             entity.ownedCount++;
+            if (state.tileTypes[idx] === 5 || state.tileTypes[idx] === 6) {
+                entity.cityCount++;
+                if (ownerIdx === 1) state.cityCount++;
+                if (state.tileTypes[idx] === 6) {
+                    entity.hasCapital = true;
+                    entity.capitalPos = {x, y};
+                }
+            }
+
             if (ownerIdx === 1) {
                 state.ownedCount++;
                 state.entities[1].ownedCount = state.ownedCount; // Keep in sync
-            }
-
-            // If player claimed it, update bounds for label
-            if (ownerIdx === 1) {
-                state.bounds.minX = Math.min(state.bounds.minX, x);
-                state.bounds.maxX = Math.max(state.bounds.maxX, x);
-                state.bounds.minY = Math.min(state.bounds.minY, y);
-                state.bounds.maxY = Math.max(state.bounds.maxY, y);
             }
 
             // Update borders (rre5)
@@ -1718,7 +1736,14 @@
         function updateTileBorder(x, y, suppressDraw = false) {
             const idx = y * CONFIG.COLS + x;
             const ownerIdx = state.tileOwners[idx];
-            if (ownerIdx === 0) return;
+            
+            if (ownerIdx === 0) {
+                if (state.tileFlags[idx] & 16) {
+                    state.tileFlags[idx] &= ~16;
+                    if (!suppressDraw) drawTile(x, y);
+                }
+                return;
+            }
 
             const neighbors = [
                 {x: x-1, y: y}, {x: x+1, y: y}, {x: x, y: y-1}, {x: x, y: y+1}
@@ -1956,12 +1981,12 @@
                     const neighbors = [idx-1, idx+1, idx-CONFIG.COLS, idx+CONFIG.COLS];
                     const isReachable = neighbors.some(n => n >= 0 && n < state.tileTypes.length && (state.tileOwners[n] === 1 || state.alliances.has(`1-${state.tileOwners[n]}`) || state.alliances.has(`${state.tileOwners[n]}-1`)));
 
-                    if (isReachable || dist <= 200) {
+                    if (isReachable || dist <= CONFIG.AIR_SUPPORT_RANGE) {
                         state.planning.turns[state.planning.activeTurn].push(idx);
                         updateTurnCount();
                         drawTile(x, y); // Highlight immediately
                     } else {
-                        notify("Target too far for Air Support (Max 200 tiles)!", "error");
+                        notify(`Target too far for Air Support (Max ${CONFIG.AIR_SUPPORT_RANGE} tiles)!`, "error");
                     }
                 }
             } else if (state.mode === 'paint' || state.mode === 'ally-paint' || state.mode === 'team-paint') {
@@ -2427,7 +2452,7 @@
                         const cy = playerEntity.capitalPos ? playerEntity.capitalPos.y : -1;
                         const dist = (cx !== -1) ? Math.sqrt(Math.pow(x - cx, 2) + Math.pow(y - cy, 2)) : 999;
                         
-                        if (dist <= 200) {
+                        if (dist <= CONFIG.AIR_SUPPORT_RANGE) {
                             baseCost = getWarplaneCost();
                         } else {
                             baseCost = Infinity;
@@ -2514,7 +2539,7 @@
                         const cy = playerEntity.capitalPos ? playerEntity.capitalPos.y : -1;
                         const dist = (cx !== -1) ? Math.sqrt(Math.pow(x - cx, 2) + Math.pow(y - cy, 2)) : 999;
                         
-                        if (dist <= 200) {
+                        if (dist <= CONFIG.AIR_SUPPORT_RANGE) {
                             baseCost = getWarplaneCost();
                         } else {
                             outOfRange = true;
@@ -2527,7 +2552,7 @@
             });
 
             if (outOfRange) {
-                notify("Some tiles are out of range (200 tiles from Capital)!", "error");
+                notify(`Some tiles are out of range (${CONFIG.AIR_SUPPORT_RANGE} tiles from Capital)!`, "error");
                 return;
             }
 
@@ -2563,8 +2588,8 @@
                 const tiles = state.planning.turns[currentTurn];
                 const playerEntity = state.entities[1];
                 
-                // Apply tile capacity limit to the turn
-                const eligibleTiles = tiles.slice(0, maxTilesPerClick);
+                // Process all tiles in the turn (player already paid for them in total plan cost)
+                const eligibleTiles = tiles;
                 
                 // Per-turn balance check
                 let turnCost = 0;
@@ -2586,7 +2611,7 @@
                         const cy = playerEntity.capitalPos ? playerEntity.capitalPos.y : -1;
                         const dist = (cx !== -1) ? Math.sqrt(Math.pow(x - cx, 2) + Math.pow(y - cy, 2)) : 999;
                         
-                        if (dist <= 200) {
+                        if (dist <= CONFIG.AIR_SUPPORT_RANGE) {
                             baseCost = getWarplaneCost();
                         } else {
                             baseCost = Infinity; 
@@ -2604,6 +2629,8 @@
                 }
 
                 eligibleTiles.forEach(idx => {
+                    if (state.launchedMissiles.has(idx)) return;
+
                     const x = idx % CONFIG.COLS, y = Math.floor(idx / CONFIG.COLS);
                     const oldOwner = state.tileOwners[idx];
                     const type = state.tileTypes[idx];
@@ -2627,8 +2654,9 @@
                             executeWarMissileAssault(x, y, cx, cy, idx, activeWar);
                         } else {
                             if (!isReachable) {
-                                if (dist <= 200) {
+                                if (dist <= CONFIG.AIR_SUPPORT_RANGE) {
                                     actualCost = getWarplaneCost();
+                                    state.launchedMissiles.add(idx);
                                     // Air Support Visual
                                     const plane = document.createElement('div');
                                     plane.className = 'plane'; plane.innerText = '🚀';
@@ -2636,16 +2664,32 @@
                                     plane.style.top = `${cy * CONFIG.TILE_SIZE}px`;
                                     container.appendChild(plane);
                                     setTimeout(() => { plane.style.left = `${x * CONFIG.TILE_SIZE}px`; plane.style.top = `${y * CONFIG.TILE_SIZE}px`; }, 50);
-                                    setTimeout(() => plane.remove(), 1000);
+                                    setTimeout(() => {
+                                        state.launchedMissiles.delete(idx);
+                                        plane.remove();
+                                    }, 1000);
                                 } else {
                                     return;
                                 }
+                            }
+
+                            if (type === 6) { // Capital destroyed
+                                const enemy = state.entities[oldOwner];
+                                enemy.hasCapital = false;
+                                enemy.capitalPos = null;
+                                enemy.paralyzedCycles = 15;
+                                state.entities[oldOwner].cityCount--;
+                                if (oldOwner === 1) state.cityCount--;
+                                state.cityIndices.delete(idx);
+                                state.tileTypes[idx] = 2; // Destroy before claim to avoid capture stats
+                                notify(`${enemy.name}'s Capital has been DESTROYED! They are paralyzed!`, 'war', x, y);
                             }
 
                             claim(x, y, true, 1, true); 
                             drawTile(x, y);
                             
                             // Rocket Visual
+                            state.launchedMissiles.add(idx);
                             const angle = Math.atan2(y - cy, x - cx) * (180 / Math.PI);
                             const rocket = document.createElement('div');
                             rocket.className = 'plane';
@@ -2664,11 +2708,21 @@
                             }, 50);
                             
                             setTimeout(() => {
+                                state.launchedMissiles.delete(idx);
                                 rocket.remove();
                                 if (type === 5 || type === 6) {
                                     createExplosion(x, y);
                                 }
                             }, 1000);
+
+                            // Cleanup capital label if destroyed
+                            if (type === 6) {
+                                const enemy = state.entities[oldOwner];
+                                const labels = document.querySelectorAll('.capital-label');
+                                labels.forEach(l => {
+                                    if (l.innerText === enemy.name.toUpperCase()) l.remove();
+                                });
+                            }
                         }
 
                         if (state.balance !== Infinity) {
@@ -2679,26 +2733,7 @@
 
                         // Track losses
                         activeWar.losses.target.tiles++;
-                        if (type === 5) activeWar.losses.target.cities++;
-
-                        if (type === 6) { // Capital conquered
-                            const enemy = state.entities[oldOwner];
-                            enemy.hasCapital = false;
-                            enemy.capitalPos = null;
-                            enemy.paralyzedCycles = 15;
-                            state.cityIndices.delete(idx);
-                            state.entities[oldOwner].cityCount--;
-                            if (oldOwner === 1) state.cityCount--;
-                            notify(`${enemy.name}'s Capital has been DESTROYED! They are paralyzed!`, 'war', x, y);
-
-                            state.tileTypes[idx] = 2; // Turn into regular land
-                            // Remove label
-                            const labels = document.querySelectorAll('.capital-label');
-                            labels.forEach(l => {
-                                if (l.innerText === enemy.name.toUpperCase()) l.remove();
-                            });
-                            drawTile(x, y);
-                        }
+                        if (type === 5 || type === 6) activeWar.losses.target.cities++;
                     }
                 });
                 
@@ -2727,6 +2762,7 @@
             }, 50);
 
             setTimeout(() => {
+                state.launchedMissiles.delete(targetIdx);
                 rocket.remove();
                 createExplosion(tx, ty);
                 
@@ -2789,6 +2825,7 @@
         }
 
         function executeWarplaneAssault(tx, ty, cx, cy, targetIdx, activeWar) {
+            state.launchedMissiles.add(targetIdx);
             const angle = Math.atan2(ty - cy, tx - cx) * (180 / Math.PI);
             const warplane = document.createElement('div');
             warplane.className = 'plane';
@@ -2934,14 +2971,15 @@
                     warplane.querySelector('img').style.transform = `rotate(${returnAngle + 90}deg)`;
                     
                     setTimeout(() => {
-                        closeWarplaneAssault(warplane, flySfx);
+                        closeWarplaneAssault(warplane, flySfx, targetIdx);
                     }, 2000);
                 }, 1500);
 
             }, 2000);
         }
 
-        function closeWarplaneAssault(warplane, flySfx) {
+        function closeWarplaneAssault(warplane, flySfx, targetIdx) {
+            state.launchedMissiles.delete(targetIdx);
             warplane.remove();
             if (flySfx) flySfx.pause();
         }
@@ -2982,7 +3020,7 @@
                     let isAirSupportTarget = false;
                     if (cx !== -1 && (type === 5 || type === 6)) {
                         const dist = Math.sqrt(Math.pow(x - cx, 2) + Math.pow(y - cy, 2));
-                        if (dist <= 200) isAirSupportTarget = true;
+                        if (dist <= CONFIG.AIR_SUPPORT_RANGE) isAirSupportTarget = true;
                     }
 
                     if (isBordering || isAirSupportTarget) targetIndices.push(i);
@@ -3021,7 +3059,7 @@
 
                     if (!isBordering && cx !== -1) {
                         const dist = Math.sqrt(Math.pow(tx - cx, 2) + Math.pow(ty - cy, 2));
-                        if (dist <= 200) {
+                        if (dist <= CONFIG.AIR_SUPPORT_RANGE) {
                             // Air Support Visual for Bot
                             state.launchedMissiles.add(idx); // Track launch
                             const angle = Math.atan2(ty - cy, tx - cx) * (180 / Math.PI);
@@ -3072,10 +3110,6 @@
                     war.losses.target.tiles++;
                     if (type === 5 || type === 6) {
                         war.losses.target.cities++;
-                        state.cityIndices.delete(idx);
-                        const enemy = state.entities[war.target];
-                        enemy.cityCount--;
-                        if (war.target === 1) state.cityCount--;
                     }
 
                     if (type === 6) {
@@ -3249,6 +3283,8 @@
             
             // If at war and specifically in transport mode, trigger Air Support (Warplane)
             if (isWar && state.mode === 'transport') {
+                if (state.launchedMissiles.has(targetIdx)) return;
+
                 const cost = getWarplaneCost();
                 
                 if (state.balance !== Infinity && state.balance < cost) {
@@ -3265,7 +3301,7 @@
                 const tx = targetIdx % CONFIG.COLS, ty = Math.floor(targetIdx / CONFIG.COLS);
                 
                 const dist = Math.sqrt(Math.pow(tx - cx, 2) + Math.pow(ty - cy, 2));
-                if (dist > 200) {
+                if (dist > CONFIG.AIR_SUPPORT_RANGE) {
                     notify("Target is out of Air Support range!", "error");
                     return;
                 }
@@ -3274,6 +3310,7 @@
                     state.balance -= cost;
                 }
                 state.entities[1].balance = state.balance;
+                state.launchedMissiles.add(targetIdx);
                 executeWarplaneAssault(tx, ty, cx, cy, targetIdx, playerActiveWar);
                 return;
             }
@@ -3356,6 +3393,8 @@
             const playerActiveWar = state.wars.find(w => w.active && (w.host === 1 || w.allies.includes(1) || w.target === 1 || w.targetAllies.includes(1)));
             if (!playerActiveWar) return;
 
+            if (state.launchedMissiles.has(targetIdx)) return;
+
             const cost = getWarMissileCost();
             
             if (state.balance !== Infinity && state.balance < cost) {
@@ -3372,7 +3411,7 @@
             const cx = state.entities[1].capitalPos.x, cy = state.entities[1].capitalPos.y;
             
             const dist = Math.sqrt(Math.pow(tx - cx, 2) + Math.pow(ty - cy, 2));
-            if (dist > 200) {
+            if (dist > CONFIG.AIR_SUPPORT_RANGE) {
                 notify("Target is out of War Missile range!", "error");
                 return;
             }
@@ -3385,6 +3424,7 @@
                 state.balance -= cost;
             }
             state.entities[1].balance = state.balance;
+            state.launchedMissiles.add(targetIdx);
             executeWarMissileAssault(tx, ty, cx, cy, targetIdx, playerActiveWar);
         }
 
@@ -4951,6 +4991,7 @@
             
             drawTile(tx, ty);
             updateUI(state.lastMaxBalance);
+            updateLabel();
             alert("Capital rebuilt!");
         }
 
@@ -5295,7 +5336,10 @@
                     maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
                 });
                 
-                if (maxX >= minX) drawRegion(minX - 1, minY - 1, maxX + 1, maxY + 1);
+                if (maxX >= minX) {
+                    drawRegion(minX - 1, minY - 1, maxX + 1, maxY + 1);
+                    updateLabel();
+                }
                 
                 // Clean up war records
                 war.capturedByHost = war.capturedByHost.filter(c => state.tileOwners[c.idx] !== 1 && c.originalOwner !== 1);
@@ -5403,7 +5447,10 @@
                     maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
                 });
 
-                if (maxX >= minX) drawRegion(minX - 1, minY - 1, maxX + 1, maxY + 1);
+                if (maxX >= minX) {
+                    drawRegion(minX - 1, minY - 1, maxX + 1, maxY + 1);
+                    updateLabel();
+                }
 
                 checkForDams();
                 endWar(war.id);
@@ -5429,6 +5476,16 @@
                         state.tileTypes[i] = 1; // Land
                     }
                     updateTileBorder(i % CONFIG.COLS, Math.floor(i / CONFIG.COLS));
+                    
+                    // Update neighbors' borders too
+                    const tx = i % CONFIG.COLS, ty = Math.floor(i / CONFIG.COLS);
+                    const neighbors = [{x: tx-1, y: ty}, {x: tx+1, y: ty}, {x: tx, y: ty-1}, {x: tx, y: ty+1}];
+                    neighbors.forEach(n => {
+                        if (n.x >= 0 && n.x < CONFIG.COLS && n.y >= 0 && n.y < CONFIG.ROWS) {
+                            updateTileBorder(n.x, n.y);
+                        }
+                    });
+
                     drawTile(i % CONFIG.COLS, Math.floor(i / CONFIG.COLS));
                 }
             }
@@ -5527,6 +5584,9 @@
                 minX = Math.min(minX, x); maxX = Math.max(maxX, x);
                 minY = Math.min(minY, y); maxY = Math.max(maxY, y);
             }
+
+            // Sync global bounds for popups and label centering
+            state.bounds = { minX, maxX, minY, maxY };
 
             label.style.left = `${((minX + maxX + 1) / 2) * CONFIG.TILE_SIZE}px`;
             label.style.top = `${((minY + maxY + 1) / 2) * CONFIG.TILE_SIZE}px`;
