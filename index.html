@@ -784,15 +784,15 @@
                     <div class="flex flex-col gap-1">
                         <span class="text-[8px] text-slate-500 font-bold uppercase">Brush Type</span>
                         <div class="flex gap-2">
-                            <button onclick="setEngineBrush('water')" id="brush-water" class="w-8 h-8 rounded bg-blue-900 border border-blue-500/50"></button>
-                            <button onclick="setEngineBrush('land')" id="brush-land" class="w-8 h-8 rounded bg-slate-800 border border-white/20"></button>
+                            <button onclick="setEngineBrush('water')" id="brush-water" aria-label="Water brush" title="Water brush" class="w-8 h-8 rounded bg-blue-900 border border-blue-500/50"></button>
+                            <button onclick="setEngineBrush('land')" id="brush-land" aria-label="Land brush" title="Land brush" class="w-8 h-8 rounded bg-slate-800 border border-white/20"></button>
                             <button onclick="setEngineBrush('city')" id="brush-city" class="w-8 h-8 rounded bg-amber-600 flex items-center justify-center text-xs">🏠</button>
                             <button onclick="setEngineBrush('capital')" id="brush-capital" class="w-8 h-8 rounded bg-red-600 flex items-center justify-center text-xs">👑</button>
                         </div>
                     </div>
                     <div class="flex flex-col gap-1">
                         <span class="text-[8px] text-slate-500 font-bold uppercase">Brush Size</span>
-                        <input type="range" id="engine-brush-size" min="1" max="10" value="1" class="w-24">
+                        <input type="range" id="engine-brush-size" min="1" max="10" value="1" aria-label="Brush size" title="Brush size" class="w-24">
                     </div>
                     <div class="ml-auto text-[10px] text-slate-500 font-mono" id="engine-coords">X: 0, Y: 0</div>
                 </div>
@@ -1015,7 +1015,7 @@ log("World Generated!");</pre>
                         Open Map Engine
                     </button>
                     <div class="relative">
-                        <input type="file" id="map-upload" accept=".json" class="hidden" onchange="loadCustomMap(this)">
+                        <input type="file" id="map-upload" accept=".json" aria-label="Upload map file" title="Upload map file" class="hidden" onchange="loadCustomMap(this)">
                         <button onclick="document.getElementById('map-upload').click()" class="w-full bg-slate-800 border border-slate-700 py-4 rounded-xl font-bold text-slate-300 shadow-lg active:scale-95 transition-transform uppercase text-xs">
                             Upload & Play Map
                         </button>
