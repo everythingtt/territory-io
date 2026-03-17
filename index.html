@@ -925,9 +925,13 @@ reset();
 // Generate base terrain
 seed(0.15, 0.4);
 
-// Add custom islands
-island(100, 100, 30, 'land');
-island(250, 150, 20, 'land');
+// Custom generator
+tory myIsland(x, y) {
+    island(x, y, 30, 'land');
+}
+
+myIsland(100, 100);
+myIsland(250, 150);
 
 // Place cities
 city(100, 100);
@@ -1334,7 +1338,7 @@ print("World Generated!");</pre>
                         type: 'folder',
                         children: [
                             { id: 'f1', name: 'scripts', type: 'folder', children: [
-                                { id: 's1', name: 'main.tory', type: 'script', content: '// ToryScript v2.6\nprint("Engine Booted...");\n\n// Run on game start\nfunction onStart() {\n    reset();\n    seed(0.1, 0.45);\n    home(192, 108);\n}\n\nonStart();' },
+                                { id: 's1', name: 'main.tory', type: 'script', content: '// ToryScript v2.6\nprint("Engine Booted...");\n\n// Run on game start\ntory onStart() {\n    reset();\n    seed(0.1, 0.45);\n    home(192, 108);\n}\n\nonStart();' },
                                 { id: 's2', name: 'archipelago.tory', type: 'script', content: '// ToryScript Archipelago Generator\nreset();\nseed(0.2, 0.5);\n\n// Add some manual islands\nisland(100, 100, 20, "land");\nisland(284, 150, 15, "land");\n\n// Add cities\ncity(100, 100);\ncity(284, 150);\n\nhome(100, 100);\nprint("Archipelago Generated!");' }
                             ]},
                             { id: 'f2', name: 'maps', type: 'folder', children: [] }
@@ -1821,6 +1825,7 @@ print("World Generated!");</pre>
             
             // Keyword mapping (Regex based transpilation)
             const mapping = [
+                { pattern: /\btory\b/g, replacement: 'function' },
                 { pattern: /\bpaint\s*\(/g, replacement: 'fill(' },
                 { pattern: /\bisland\s*\(/g, replacement: 'circle(' },
                 { pattern: /\bseed\s*\(/g, replacement: 'noise(' },
