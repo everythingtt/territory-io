@@ -789,6 +789,7 @@
                     <button type="button" onclick="setEngineTab('toryscript')" id="tab-engine-toryscript" class="px-4 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-400 text-[10px] font-bold uppercase tracking-wide" title="ToryScript Editor">Script</button>
                     <button type="button" onclick="setEngineTab('docs')" id="tab-engine-docs" class="px-4 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-400 text-[10px] font-bold uppercase tracking-wide" title="Documentation">Docs</button>
                     <button type="button" onclick="setEngineTab('explorer')" id="tab-engine-explorer" class="px-4 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-400 text-[10px] font-bold uppercase tracking-wide" title="Asset Explorer">Assets</button>
+                    <button type="button" onclick="setEngineTab('templates')" id="tab-engine-templates" class="px-4 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-400 text-[10px] font-bold uppercase tracking-wide" title="Map Templates">Templates</button>
                 </div>
             </div>
             <div class="flex items-center gap-3">
@@ -971,6 +972,29 @@
                     </div>
 
                     <div class="pt-8 border-t border-slate-800">
+                        <h3 class="text-2xl font-black text-white italic uppercase mb-2">Global API & Integration</h3>
+                        <p class="text-slate-400 text-sm mb-6">ToryScript can be executed from the browser console or third-party applications.</p>
+                        
+                        <div class="space-y-6">
+                            <div class="bg-slate-800/50 p-6 rounded-2xl border border-white/5">
+                                <h4 class="text-white font-bold uppercase text-sm mb-2">Browser Console</h4>
+                                <p class="text-slate-400 text-xs mb-3">Execute scripts directly via the global <code class="text-slate-200 bg-slate-900 px-1 rounded">ToryScript</code> object.</p>
+                                <pre class="bg-black p-4 rounded-xl text-xs text-blue-400 font-mono overflow-x-auto">ToryScript.run("player('balance', 1000000); print('Funds added!');");</pre>
+                            </div>
+
+                            <div class="bg-slate-800/50 p-6 rounded-2xl border border-white/5">
+                                <h4 class="text-white font-bold uppercase text-sm mb-2">Third-Party Apps (postMessage)</h4>
+                                <p class="text-slate-400 text-xs mb-3">Send commands from external iframes or scripts using the standard web messaging API.</p>
+                                <pre class="bg-black p-4 rounded-xl text-xs text-emerald-400 font-mono overflow-x-auto">
+window.postMessage({
+    type: 'TORYSCRIPT_EXEC',
+    code: "seed(0.2, 0.5); print('Map updated via external app');"
+}, "*");</pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-8 border-t border-slate-800">
                         <h4 class="text-sm font-bold text-white uppercase mb-4">Advanced Example: Archipelago</h4>
                         <pre class="bg-black p-6 rounded-xl text-xs text-emerald-500 font-mono overflow-x-auto">
 // Reset map
@@ -1005,6 +1029,42 @@ print("World Generated!");</pre>
                     <h3 class="text-xl font-bold text-white mb-6 uppercase tracking-widest">Virtual File System</h3>
                     <div class="grid grid-cols-4 gap-4" id="explorer-grid">
                         <!-- Files will be listed here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Templates Tab -->
+            <div id="engine-content-templates" class="hidden flex-1 bg-slate-900 p-8 overflow-y-auto">
+                <div class="max-w-4xl mx-auto">
+                    <h3 class="text-xl font-bold text-white mb-6 uppercase tracking-widest">Map Templates</h3>
+                    <div class="grid grid-cols-3 gap-6" id="templates-grid">
+                        <!-- Template cards -->
+                        <div class="bg-slate-800/50 p-6 rounded-2xl border border-white/5 flex flex-col gap-4 hover:bg-slate-800 transition-all cursor-pointer group" onclick="loadTemplate('standard')">
+                            <div class="text-4xl">🌍</div>
+                            <div>
+                                <div class="font-bold text-white uppercase text-sm">Standard FFA</div>
+                                <div class="text-xs text-slate-500 mt-1">Balanced land/water ratio for free-for-all.</div>
+                            </div>
+                            <button type="button" class="mt-auto bg-blue-600/20 text-blue-400 py-2 rounded-xl font-bold text-[10px] uppercase tracking-widest group-hover:bg-blue-600 group-hover:text-white transition-all">Load Template</button>
+                        </div>
+
+                        <div class="bg-slate-800/50 p-6 rounded-2xl border border-white/5 flex flex-col gap-4 hover:bg-slate-800 transition-all cursor-pointer group" onclick="loadTemplate('islands')">
+                            <div class="text-4xl">🏝️</div>
+                            <div>
+                                <div class="font-bold text-white uppercase text-sm">Archipelago</div>
+                                <div class="text-xs text-slate-500 mt-1">Numerous small islands separated by deep water.</div>
+                            </div>
+                            <button type="button" class="mt-auto bg-blue-600/20 text-blue-400 py-2 rounded-xl font-bold text-[10px] uppercase tracking-widest group-hover:bg-blue-600 group-hover:text-white transition-all">Load Template</button>
+                        </div>
+
+                        <div class="bg-slate-800/50 p-6 rounded-2xl border border-white/5 flex flex-col gap-4 hover:bg-slate-800 transition-all cursor-pointer group" onclick="loadTemplate('fortress')">
+                            <div class="text-4xl">🏰</div>
+                            <div>
+                                <div class="font-bold text-white uppercase text-sm">Team Fortress</div>
+                                <div class="text-xs text-slate-500 mt-1">Central landmass with fortified spawn points.</div>
+                            </div>
+                            <button type="button" class="mt-auto bg-blue-600/20 text-blue-400 py-2 rounded-xl font-bold text-[10px] uppercase tracking-widest group-hover:bg-blue-600 group-hover:text-white transition-all">Load Template</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1392,8 +1452,9 @@ print("World Generated!");</pre>
                         type: 'folder',
                         children: [
                             { id: 'f1', name: 'scripts', type: 'folder', children: [
-                                { id: 's1', name: 'main.tory', type: 'script', content: '// ToryScript v2.6\nprint("Engine Booted...");\n\n// Run on game start\ntory onStart() {\n    reset();\n    seed(0.1, 0.45);\n    home(192, 108);\n}\n\nonStart();' },
-                                { id: 's2', name: 'archipelago.tory', type: 'script', content: '// ToryScript Archipelago Generator\nreset();\nseed(0.2, 0.5);\n\n// Add some manual islands\nisland(100, 100, 20, "land");\nisland(284, 150, 15, "land");\n\n// Add cities\ncity(100, 100);\ncity(284, 150);\n\nhome(100, 100);\nprint("Archipelago Generated!");' }
+                                { id: 's1', name: 'main.tory', type: 'script', content: '// ToryScript v2.9\nprint("Engine Booted...");\n\n// Run on game start\ntory onStart() {\n    reset();\n    seed(0.1, 0.45);\n    home(192, 108);\n}\n\nonStart();' },
+                                { id: 's2', name: 'archipelago.tory', type: 'script', content: '// ToryScript Archipelago Generator\nreset();\nseed(0.2, 0.5);\n\n// Add some manual islands\nisland(100, 100, 20, "land");\nisland(284, 150, 15, "land");\n\n// Add cities\ncity(100, 100);\ncity(284, 150);\n\nhome(100, 100);\nprint("Archipelago Generated!");' },
+                                { id: 's3', name: 'workspace_explorer.tory', type: 'script', content: '// Advanced Workspace Explorer\n// Injects a temporary sidebar to view VFS\n\ntory toggleExplorer() {\n    tory id = "tory-explorer-sidebar";\n    tory existing = document.getElementById(id);\n    if (existing) {\n        existing.remove();\n        print("Explorer Closed.");\n        return;\n    }\n\n    tory sidebar = document.createElement("div");\n    sidebar.id = id;\n    sidebar.style.cssText = "position:fixed;right:0;top:0;width:300px;height:100vh;background:rgba(15,23,42,0.95);backdrop-filter:blur(10px);border-left:1px solid rgba(255,255,255,0.1);z-index:9999;padding:20px;color:white;font-family:sans-serif;overflow-y:auto;transition:all 0.3s ease";\n    \n    tory html = "<h2 style=\'margin-bottom:20px;font-size:18px;font-style:italic;font-weight:900\'>WORKSPACE EXPLORER</h2>";\n    \n    tory entities = getEntities();\n    html += "<div style=\'margin-bottom:20px;padding:15px;background:rgba(255,255,255,0.05);border-radius:12px\'>";\n    html += "<div style=\'font-size:10px;color:#64748b;font-weight:bold;margin-bottom:5px\'>MAP STATS</div>";\n    html += "<div>Entities: " + entities.length + "</div>";\n    html += "<div>Version: " + VERSION + "</div>";\n    html += "</div>";\n\n    html += "<div style=\'font-size:10px;color:#64748b;font-weight:bold;margin-bottom:10px\'>ACTIVE VFS LOG</div>";\n    html += "<div id=\'explorer-vfs-content\' style=\'font-size:12px;display:flex;flex-direction:column;gap:8px\'>";\n    html += "Searching VFS...</div>";\n\n    sidebar.innerHTML = html;\n    document.body.appendChild(sidebar);\n    print("Explorer Opened.");\n}\n\ntoggleExplorer();' }
                             ]},
                             { id: 'f2', name: 'maps', type: 'folder', children: [] }
                         ]
@@ -1562,7 +1623,7 @@ print("World Generated!");</pre>
 
         function setEngineTab(tab) {
             state.engine.activeTab = tab;
-            ['editor', 'toryscript', 'docs', 'explorer'].forEach(t => {
+            ['editor', 'toryscript', 'docs', 'explorer', 'templates'].forEach(t => {
                 const btn = document.getElementById(`tab-engine-${t}`);
                 const panel = document.getElementById(`engine-content-${t}`);
                 if (btn) btn.className = t === tab
@@ -1571,6 +1632,22 @@ print("World Generated!");</pre>
                 if (panel) panel.classList.toggle('hidden', t !== tab);
             });
             if (tab === 'explorer') updateEngineExplorer();
+        }
+
+        function loadTemplate(name) {
+            const templates = {
+                standard: `// Standard FFA Template\nreset();\nseed(0.1, 0.45);\nhome(192, 108);\nprint("Standard FFA Template Loaded!");`,
+                islands: `// Archipelago Template\nreset();\nseed(0.2, 0.55);\nprint("Archipelago Template Loaded!");`,
+                fortress: `// Team Fortress Template\nreset();\npaint(100, 50, 184, 116, "land");\nisland(192, 108, 40, "water"); // Central lake\ncity(140, 80);\ncity(240, 80);\ncity(140, 130);\ncity(240, 130);\nhome(192, 108);\nprint("Team Fortress Template Loaded!");`
+            };
+
+            if (templates[name]) {
+                const editor = document.getElementById('tory-editor');
+                editor.value = templates[name];
+                setEngineTab('toryscript');
+                runToryScript();
+                notify(`Template "${name.toUpperCase()}" applied!`, "success");
+            }
         }
 
         function exportToryMap() {
@@ -6897,12 +6974,7 @@ print("World Generated!");</pre>
         // Keyboard Shortcuts
         window.addEventListener('keydown', (e) => {
             // Block DevTools Shortcuts
-            if (e.key === 'F12' || 
-                (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) || 
-                (e.ctrlKey && e.key === 'U')) {
-                e.preventDefault();
-                return false;
-            }
+
 
             // Ignore if typing in city modal
             if (!document.getElementById('city-modal').classList.contains('hidden')) return;
@@ -6940,6 +7012,7 @@ print("World Generated!");</pre>
         // Disable Right Click
         window.addEventListener('contextmenu', (e) => e.preventDefault());
 
+        /* 
         // Basic Anti-Debugging
         (function() {
             const block = function() {
@@ -6949,6 +7022,7 @@ print("World Generated!");</pre>
             };
             try { block(); } catch (err) {}
         })();
+        */
 
         // Mouse Wheel Zoom for Pan Mode
         window.addEventListener('wheel', (e) => {
