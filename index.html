@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Territory.io - Expanded World</title>
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" type="image/gif" href="assets/rocket.gif">
     <link rel="apple-touch-icon" href="assets/rocket.gif">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -82,7 +82,7 @@
         }
         .tile.city::after { content: '🏠'; font-size: 8px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
         .tile.capital::after { content: '👑'; font-size: 9px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
-        .tile.building::after { content: '🏗️'; font-size: 8px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); animation: pulse 1s infinite; }
+        .tile.building::after { content: '🏗️'; font-size: 8px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); animation: pulse 1s infinite; will-change: opacity; }
 
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
@@ -171,6 +171,7 @@
             pointer-events: none;
             animation: float-up 1s ease-out forwards;
             z-index: 50;
+            will-change: transform, opacity;
         }
         .explosion-gif {
             position: absolute;
@@ -337,7 +338,7 @@
             </div>
             <h2 class="text-xl font-bold text-white mb-2 uppercase italic">Update Available</h2>
             <p class="text-slate-400 text-sm mb-6 leading-relaxed">A new version of Territory.io is available. Please refresh to receive the latest updates and fixes.</p>
-            <button onclick="location.reload()" class="w-full bg-blue-600 py-4 rounded-xl font-bold text-white shadow-lg shadow-blue-900/20 active:scale-95 transition-all">
+            <button type="button" onclick="location.reload()" class="w-full bg-blue-600 py-4 rounded-xl font-bold text-white shadow-lg shadow-blue-900/20 active:scale-95 transition-all" title="Refresh the game">
                 REFRESH NOW
             </button>
         </div>
@@ -350,8 +351,8 @@
             <input type="text" id="city-name-input" maxlength="10" placeholder="City Name" title="City Name" aria-label="Enter city name"
                    class="w-full bg-slate-800 border border-slate-700 p-3 rounded-xl mb-4 text-white text-center font-bold outline-none">
             <div class="flex gap-2">
-                <button onclick="closeCityModal()" class="flex-1 bg-slate-700 py-3 rounded-xl font-bold text-slate-300">CANCEL</button>
-                <button onclick="confirmCityBuild()" class="flex-1 bg-amber-600 py-3 rounded-xl font-bold text-white shadow-lg">BUILD</button>
+                <button type="button" onclick="closeCityModal()" class="flex-1 bg-slate-700 py-3 rounded-xl font-bold text-slate-300" title="Cancel city building">CANCEL</button>
+                <button type="button" onclick="confirmCityBuild()" class="flex-1 bg-amber-600 py-3 rounded-xl font-bold text-white shadow-lg" title="Build the city">BUILD</button>
             </div>
         </div>
     </div>
@@ -362,8 +363,8 @@
             <h2 class="text-xl font-bold text-blue-500 mb-2 uppercase">Confirm Spawn</h2>
             <p class="text-slate-400 text-sm mb-6">Are you sure you want to place your capital here?</p>
             <div class="flex gap-2">
-                <button onclick="cancelSpawn()" class="flex-1 bg-slate-700 py-3 rounded-xl font-bold text-slate-300">CANCEL</button>
-                <button onclick="confirmSpawn()" class="flex-1 bg-blue-600 py-3 rounded-xl font-bold text-white shadow-lg">CONFIRM</button>
+                <button type="button" onclick="cancelSpawn()" class="flex-1 bg-slate-700 py-3 rounded-xl font-bold text-slate-300" title="Cancel spawning">CANCEL</button>
+                <button type="button" onclick="confirmSpawn()" class="flex-1 bg-blue-600 py-3 rounded-xl font-bold text-white shadow-lg" title="Confirm spawning here">CONFIRM</button>
             </div>
         </div>
     </div>
@@ -394,13 +395,13 @@
                 </div>
 
                 <div id="diplo-actions" class="space-y-3 pt-4">
-                    <button id="btn-propose-alliance" onclick="proposeAlliance()" class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl font-bold text-white shadow-lg transition-all flex items-center justify-center gap-3">
+                    <button type="button" id="btn-propose-alliance" onclick="proposeAlliance()" class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl font-bold text-white shadow-lg transition-all flex items-center justify-center gap-3" title="Propose an alliance">
                         <span>🤝</span> PROPOSE ALLIANCE
                     </button>
-                    <button id="btn-send-aid" onclick="openAidModal()" class="hidden w-full bg-emerald-600 hover:bg-emerald-500 py-4 rounded-2xl font-bold text-white shadow-lg transition-all flex items-center justify-center gap-3">
+                    <button type="button" id="btn-send-aid" onclick="openAidModal()" class="hidden w-full bg-emerald-600 hover:bg-emerald-500 py-4 rounded-2xl font-bold text-white shadow-lg transition-all flex items-center justify-center gap-3" title="Send financial aid">
                         <span>💰</span> SEND AID
                     </button>
-                    <button id="btn-declare-war" onclick="startJustification()" class="w-full bg-red-600 hover:bg-red-500 py-4 rounded-2xl font-bold text-white shadow-lg transition-all flex items-center justify-center gap-3">
+                    <button type="button" id="btn-declare-war" onclick="startJustification()" class="w-full bg-red-600 hover:bg-red-500 py-4 rounded-2xl font-bold text-white shadow-lg transition-all flex items-center justify-center gap-3" title="Declare war on this entity">
                         <span>⚔️</span> DECLARE WAR
                     </button>
                     <div id="justification-progress" class="hidden w-full bg-slate-800 rounded-2xl p-4 border border-red-500/20">
@@ -425,8 +426,8 @@
             <input type="number" id="aid-amount" placeholder="Amount" title="Aid Amount" aria-label="Enter aid amount"
                    class="w-full bg-slate-800 p-4 rounded-xl mb-4 text-white font-bold outline-none focus:border-emerald-500 border border-slate-800">
             <div class="flex gap-3">
-                <button onclick="closeAidModal()" class="flex-1 bg-slate-800 py-4 rounded-xl font-bold text-slate-400">CANCEL</button>
-                <button onclick="sendAid()" class="flex-1 bg-emerald-600 py-4 rounded-xl font-bold text-white">SEND</button>
+                <button type="button" onclick="closeAidModal()" class="flex-1 bg-slate-800 py-4 rounded-xl font-bold text-slate-400" title="Cancel aid">CANCEL</button>
+                <button type="button" onclick="sendAid()" class="flex-1 bg-emerald-600 py-4 rounded-xl font-bold text-white" title="Send aid">SEND</button>
             </div>
         </div>
     </div>
@@ -441,15 +442,15 @@
 
             <!-- Assault Type Selection -->
             <div class="flex gap-2 mb-6">
-                <button id="assault-type-support" onclick="setAssaultType('support')" class="flex-1 py-2 rounded-xl font-bold text-[10px] uppercase tracking-wider transition-all bg-blue-600 text-white shadow-lg">Air Support</button>
-                <button id="assault-type-missile" onclick="setAssaultType('missile')" class="flex-1 py-2 rounded-xl font-bold text-[10px] uppercase tracking-wider transition-all bg-slate-800 text-slate-400">War Missile</button>
+                <button type="button" id="assault-type-support" onclick="setAssaultType('support')" class="flex-1 py-2 rounded-xl font-bold text-[10px] uppercase tracking-wider transition-all bg-blue-600 text-white shadow-lg" title="Air Support Assault">Air Support</button>
+                <button type="button" id="assault-type-missile" onclick="setAssaultType('missile')" class="flex-1 py-2 rounded-xl font-bold text-[10px] uppercase tracking-wider transition-all bg-slate-800 text-slate-400" title="War Missile Assault">War Missile</button>
             </div>
 
             <div class="grid grid-cols-5 gap-2 mb-6">
                 <!-- Turn Buttons -->
                 <script>
                     for(let i=1; i<=10; i++) {
-                        document.write(`<button id="turn-btn-${i}" onclick="setPlanTurn(${i-1})" class="py-2 rounded-xl font-bold text-xs transition-all bg-slate-800 text-slate-500 border border-white/5">T${i}</button>`);
+                        document.write(`<button type="button" id="turn-btn-${i}" onclick="setPlanTurn(${i-1})" class="py-2 rounded-xl font-bold text-xs transition-all bg-slate-800 text-slate-500 border border-white/5" title="Planning Turn ${i}">T${i}</button>`);
                     }
                 </script>
             </div>
@@ -462,9 +463,9 @@
             </div>
 
             <div class="flex gap-3">
-                <button onclick="cancelPlan()" class="flex-1 bg-slate-800 py-4 rounded-2xl font-bold text-slate-400 uppercase tracking-widest text-[10px]">Cancel</button>
-                <button onclick="hideAssaultModal()" class="flex-1 bg-blue-600 py-4 rounded-2xl font-bold text-white uppercase tracking-widest text-[10px] shadow-lg shadow-blue-600/20">Select on Map</button>
-                <button id="deploy-plan-btn" onclick="deployPlan()" class="flex-1 bg-red-600/50 cursor-not-allowed py-4 rounded-2xl font-bold text-white/50 uppercase tracking-widest text-[10px]" disabled>Deploy Plan</button>
+                <button type="button" onclick="cancelPlan()" class="flex-1 bg-slate-800 py-4 rounded-2xl font-bold text-slate-400 uppercase tracking-widest text-[10px]" title="Cancel planning">Cancel</button>
+                <button type="button" onclick="hideAssaultModal()" class="flex-1 bg-blue-600 py-4 rounded-2xl font-bold text-white uppercase tracking-widest text-[10px] shadow-lg shadow-blue-600/20" title="Select targets on the map">Select on Map</button>
+                <button type="button" id="deploy-plan-btn" onclick="deployPlan()" class="flex-1 bg-red-600/50 cursor-not-allowed py-4 rounded-2xl font-bold text-white/50 uppercase tracking-widest text-[10px]" disabled title="Deploy the plan">Deploy Plan</button>
             </div>
         </div>
         <p class="mt-6 text-slate-500 text-[10px] uppercase font-bold tracking-[0.2em]">Select enemy tiles on the map to add them to this turn</p>
@@ -479,15 +480,15 @@
             <span id="hud-plan-cost" class="text-[8px] text-yellow-500 font-bold uppercase">Cost: $0</span>
         </div>
         <div class="flex gap-2">
-            <button onclick="setPlanTurn(state.planning.activeTurn - 1)" class="p-2 bg-slate-800 rounded-xl hover:bg-slate-700 text-white" title="Previous Turn" aria-label="Switch to previous planning turn">
+            <button type="button" onclick="setPlanTurn(state.planning.activeTurn - 1)" class="p-2 bg-slate-800 rounded-xl hover:bg-slate-700 text-white" title="Previous Turn" aria-label="Switch to previous planning turn">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 256 256"><path d="M165.66,202.34a8,8,0,0,1-11.32,11.32l-80-80a8,8,0,0,1,0-11.32l80-80a8,8,0,0,1,11.32,11.32L91.31,128Z"></path></svg>
             </button>
-            <button onclick="setPlanTurn(state.planning.activeTurn + 1)" class="p-2 bg-slate-800 rounded-xl hover:bg-slate-700 text-white" title="Next Turn" aria-label="Switch to next planning turn">
+            <button type="button" onclick="setPlanTurn(state.planning.activeTurn + 1)" class="p-2 bg-slate-800 rounded-xl hover:bg-slate-700 text-white" title="Next Turn" aria-label="Switch to next planning turn">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 256 256"><path d="M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z"></path></svg>
             </button>
         </div>
         <div class="h-8 w-[1px] bg-white/10"></div>
-        <button onclick="showAssaultModal()" class="bg-red-600 hover:bg-red-500 px-4 py-2 rounded-xl font-bold text-[10px] text-white uppercase tracking-widest transition-all">
+        <button type="button" onclick="showAssaultModal()" class="bg-red-600 hover:bg-red-500 px-4 py-2 rounded-xl font-bold text-[10px] text-white uppercase tracking-widest transition-all" title="Review and deploy the assault">
             Review & Deploy
         </button>
     </div>
@@ -504,7 +505,7 @@
         <div class="bg-slate-900 p-8 rounded-3xl border border-slate-800 w-full max-w-2xl">
             <div class="flex justify-between items-center mb-8">
                 <h2 class="text-2xl font-bold text-white">WAR REPORT</h2>
-                <button onclick="closeWarPanel()" class="text-slate-500 hover:text-white">CLOSE</button>
+                <button type="button" onclick="closeWarPanel()" class="text-slate-500 hover:text-white" title="Close war report">CLOSE</button>
             </div>
             
             <div class="grid grid-cols-2 gap-8">
@@ -529,9 +530,9 @@
             </div>
 
             <div class="mt-8 pt-8 border-t border-white/5 flex gap-4">
-                <button id="btn-add-war-ally" onclick="openAddAllyModal()" class="flex-1 bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl font-bold text-white transition-all">ADD WAR ALLY</button>
-                <button onclick="proposePeace('white')" class="flex-1 bg-slate-800 py-4 rounded-2xl font-bold text-white">WHITE PEACE</button>
-                <button onclick="proposePeace('keep')" class="flex-1 bg-slate-800 py-4 rounded-2xl font-bold text-white">END WAR</button>
+                <button type="button" id="btn-add-war-ally" onclick="openAddAllyModal()" class="flex-1 bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl font-bold text-white transition-all" title="Invite an ally to the war">ADD WAR ALLY</button>
+                <button type="button" onclick="proposePeace('white')" class="flex-1 bg-slate-800 py-4 rounded-2xl font-bold text-white" title="Propose white peace">WHITE PEACE</button>
+                <button type="button" onclick="proposePeace('keep')" class="flex-1 bg-slate-800 py-4 rounded-2xl font-bold text-white" title="End war with current borders">END WAR</button>
             </div>
         </div>
     </div>
@@ -541,7 +542,7 @@
         <div class="bg-slate-900 p-8 rounded-3xl border border-slate-800 w-full max-w-md shadow-2xl">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-xl font-bold text-white uppercase">Add War Ally</h3>
-                <button onclick="closeAddAllyModal()" class="text-slate-500 hover:text-white">CLOSE</button>
+                <button type="button" onclick="closeAddAllyModal()" class="text-slate-500 hover:text-white" title="Close add ally modal">CLOSE</button>
             </div>
             <p class="text-xs text-slate-500 mb-4 uppercase font-bold tracking-widest">Select an entity to invite to the war</p>
             <div id="potential-allies-list" class="space-y-2 max-h-64 overflow-y-auto custom-scrollbar pr-2 mb-6">
@@ -562,8 +563,8 @@
             <h3 id="war-request-title" class="text-xl font-bold text-white mb-2 uppercase text-center">Join War Request</h3>
             <p id="war-request-msg" class="text-slate-400 text-sm mb-6 leading-relaxed text-center">ENTITY_NAME wants to join your war against TARGET_NAME.</p>
             <div class="flex gap-3">
-                <button id="btn-refuse-war-request" onclick="handleWarRequest(false)" class="flex-1 bg-slate-800 py-4 rounded-xl font-bold text-slate-400">REFUSE</button>
-                <button id="btn-accept-war-request" onclick="handleWarRequest(true)" class="flex-1 bg-red-600 py-4 rounded-xl font-bold text-white shadow-lg">ACCEPT</button>
+                <button type="button" id="btn-refuse-war-request" onclick="handleWarRequest(false)" class="flex-1 bg-slate-800 py-4 rounded-xl font-bold text-slate-400" title="Refuse war request">REFUSE</button>
+                <button type="button" id="btn-accept-war-request" onclick="handleWarRequest(true)" class="flex-1 bg-red-600 py-4 rounded-xl font-bold text-white shadow-lg" title="Accept war request">ACCEPT</button>
             </div>
         </div>
     </div>
@@ -575,13 +576,13 @@
             <div class="w-64 bg-slate-950/50 border-r border-slate-800 p-6 flex flex-col">
                 <h2 class="text-xl font-black text-white italic mb-8">RANKINGS</h2>
                 <div class="space-y-2 flex-1 overflow-y-auto custom-scrollbar">
-                    <button onclick="setRankingTab('powerIndex')" id="tab-rank-powerIndex" class="w-full text-left p-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all bg-purple-600 text-white shadow-lg">Power Index</button>
-                    <button onclick="setRankingTab('tiles')" id="tab-rank-tiles" class="w-full text-left p-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all text-slate-500 hover:bg-slate-800">Territory</button>
-                    <button onclick="setRankingTab('cities')" id="tab-rank-cities" class="w-full text-left p-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all text-slate-500 hover:bg-slate-800">Cities</button>
-                    <button onclick="setRankingTab('balance')" id="tab-rank-balance" class="w-full text-left p-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all text-slate-500 hover:bg-slate-800">Balance</button>
-                    <button onclick="setRankingTab('ovcd')" id="tab-rank-ovcd" class="w-full text-left p-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all text-slate-500 hover:bg-slate-800">Development</button>
-                    <button onclick="setRankingTab('wars')" id="tab-rank-wars" class="w-full text-left p-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all text-slate-500 hover:bg-slate-800">Military Wins</button>
-                    <button onclick="setRankingTab('dams')" id="tab-rank-dams" class="w-full text-left p-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all text-slate-500 hover:bg-slate-800">Infrastructure</button>
+                    <button type="button" onclick="setRankingTab('powerIndex')" id="tab-rank-powerIndex" class="w-full text-left p-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all bg-purple-600 text-white shadow-lg" title="Power Index Ranking">Power Index</button>
+                    <button type="button" onclick="setRankingTab('tiles')" id="tab-rank-tiles" class="w-full text-left p-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all text-slate-500 hover:bg-slate-800" title="Territory Size Ranking">Territory</button>
+                    <button type="button" onclick="setRankingTab('cities')" id="tab-rank-cities" class="w-full text-left p-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all text-slate-500 hover:bg-slate-800" title="City Count Ranking">Cities</button>
+                    <button type="button" onclick="setRankingTab('balance')" id="tab-rank-balance" class="w-full text-left p-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all text-slate-500 hover:bg-slate-800" title="Treasury Balance Ranking">Balance</button>
+                    <button type="button" onclick="setRankingTab('ovcd')" id="tab-rank-ovcd" class="w-full text-left p-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all text-slate-500 hover:bg-slate-800" title="Development Level Ranking">Development</button>
+                    <button type="button" onclick="setRankingTab('wars')" id="tab-rank-wars" class="w-full text-left p-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all text-slate-500 hover:bg-slate-800" title="Military Wins Ranking">Military Wins</button>
+                    <button type="button" onclick="setRankingTab('dams')" id="tab-rank-dams" class="w-full text-left p-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all text-slate-500 hover:bg-slate-800" title="Infrastructure Ranking">Infrastructure</button>
                 </div>
             </div>
             <!-- Content -->
@@ -595,7 +596,7 @@
                     <!-- Bar charts will be injected here -->
                 </div>
             </div>
-            <button onclick="closeRankingModal()" class="absolute top-6 right-6 text-slate-500 hover:text-white transition-colors" title="Close Rankings">
+            <button type="button" onclick="closeRankingModal()" class="absolute top-6 right-6 text-slate-500 hover:text-white transition-colors" title="Close Rankings">
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 256 256"><path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z"></path></svg>
             </button>
         </div>
@@ -608,12 +609,12 @@
             <div class="w-64 bg-slate-950/50 border-r border-slate-800 p-6 flex flex-col">
                 <h2 class="text-xl font-black text-white italic mb-8">RESEARCH</h2>
                 <div class="space-y-2 flex-1">
-                    <button onclick="setResearchTab('base')" id="tab-res-base" class="w-full text-left p-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all text-slate-500 hover:bg-slate-800">Base</button>
-                    <button onclick="setResearchTab('economic')" id="tab-res-economic" class="w-full text-left p-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all bg-blue-600 text-white shadow-lg">Economic</button>
-                    <button onclick="setResearchTab('military')" id="tab-res-military" class="w-full text-left p-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all text-slate-500 hover:bg-slate-800">Military</button>
-                    <button onclick="setResearchTab('tokens')" id="tab-res-tokens" class="w-full text-left p-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all text-slate-500 hover:bg-slate-800">Tokens</button>
-                    <button onclick="setResearchTab('political')" id="tab-res-political" class="w-full text-left p-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all text-slate-500 hover:bg-slate-800">Political</button>
-                    <button onclick="setResearchTab('progress')" id="tab-res-progress" class="w-full text-left p-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all text-slate-500 hover:bg-slate-800">Progress</button>
+                    <button type="button" onclick="setResearchTab('base')" id="tab-res-base" class="w-full text-left p-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all text-slate-500 hover:bg-slate-800" title="Base Research">Base</button>
+                    <button type="button" onclick="setResearchTab('economic')" id="tab-res-economic" class="w-full text-left p-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all bg-blue-600 text-white shadow-lg" title="Economic Research">Economic</button>
+                    <button type="button" onclick="setResearchTab('military')" id="tab-res-military" class="w-full text-left p-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all text-slate-500 hover:bg-slate-800" title="Military Research">Military</button>
+                    <button type="button" onclick="setResearchTab('tokens')" id="tab-res-tokens" class="w-full text-left p-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all text-slate-500 hover:bg-slate-800" title="Token Mining Research">Tokens</button>
+                    <button type="button" onclick="setResearchTab('political')" id="tab-res-political" class="w-full text-left p-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all text-slate-500 hover:bg-slate-800" title="Political Research">Political</button>
+                    <button type="button" onclick="setResearchTab('progress')" id="tab-res-progress" class="w-full text-left p-4 rounded-xl font-bold text-xs uppercase tracking-widest transition-all text-slate-500 hover:bg-slate-800" title="Research Progress Overview">Progress</button>
                 </div>
                 <div class="mt-auto bg-slate-800/50 p-4 rounded-2xl border border-white/5">
                     <div class="text-[10px] text-slate-500 font-bold uppercase mb-1">R-Tokens</div>
@@ -633,27 +634,27 @@
                                 <div class="font-bold text-white uppercase text-sm">Tile Cost Reduction</div>
                                 <div class="text-xs text-slate-500 mt-1">Levels 1-10: Reduce cost from -1% to -95%</div>
                             </div>
-                            <button onclick="upgradeResearch('economic', 'tileCost')" class="bg-blue-600 px-6 py-3 rounded-xl font-bold text-xs text-white shadow-lg hover:scale-105 transition-all">UPGRADE (1T)</button>
+                            <button type="button" onclick="upgradeResearch('economic', 'tileCost')" class="bg-blue-600 px-6 py-3 rounded-xl font-bold text-xs text-white shadow-lg hover:scale-105 transition-all" title="Upgrade Tile Cost Reduction">UPGRADE (1T)</button>
                         </div>
                         <div class="bg-slate-800/50 p-6 rounded-2xl border border-white/5 flex justify-between items-center">
                             <div>
                                 <div class="font-bold text-white uppercase text-sm">Rebuild Capital Discount</div>
                                 <div class="text-xs text-slate-500 mt-1">Levels 1-10: Reduce cost from -1% to -95%</div>
                             </div>
-                            <button onclick="upgradeResearch('economic', 'rebuildCost')" class="bg-blue-600 px-6 py-3 rounded-xl font-bold text-xs text-white shadow-lg hover:scale-105 transition-all">UPGRADE (1T)</button>
+                            <button type="button" onclick="upgradeResearch('economic', 'rebuildCost')" class="bg-blue-600 px-6 py-3 rounded-xl font-bold text-xs text-white shadow-lg hover:scale-105 transition-all" title="Upgrade Rebuild Capital Discount">UPGRADE (1T)</button>
                         </div>
                         <div class="bg-slate-800/50 p-6 rounded-2xl border border-white/5 flex justify-between items-center">
                             <div>
                                 <div class="font-bold text-white uppercase text-sm">Reduce War Balance Penalty</div>
                                 <div class="text-xs text-slate-500 mt-1">Levels 1-30: Reduce penalty from -0.5% to -0.01%</div>
                             </div>
-                            <button onclick="upgradeResearch('economic', 'warPenalty', 30, 1)" class="bg-blue-600 px-6 py-3 rounded-xl font-bold text-xs text-white shadow-lg hover:scale-105 transition-all">UPGRADE (1T)</button>
+                            <button type="button" onclick="upgradeResearch('economic', 'warPenalty', 30, 1)" class="bg-blue-600 px-6 py-3 rounded-xl font-bold text-xs text-white shadow-lg hover:scale-105 transition-all" title="Upgrade War Balance Penalty Reduction">UPGRADE (1T)</button>
                         </div>
                     </div>
                 </div>
                 <!-- Other tabs will be handled via JS -->
             </div>
-            <button onclick="closeResearch()" class="absolute top-6 right-6 text-slate-500 hover:text-white transition-colors" title="Close Research">
+            <button type="button" onclick="closeResearch()" class="absolute top-6 right-6 text-slate-500 hover:text-white transition-colors" title="Close Research">
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 256 256"><path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z"></path></svg>
             </button>
         </div>
@@ -683,8 +684,8 @@
 
             <!-- Tab Buttons -->
             <div class="px-8 py-4 flex gap-4 bg-slate-900/50 border-b border-slate-800">
-                <button onclick="setManagementTab('cities')" id="tab-mgt-cities" class="px-6 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all bg-blue-600 text-white shadow-lg">Cities & Population</button>
-                <button onclick="setManagementTab('investments')" id="tab-mgt-investments" class="px-6 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all text-slate-500 hover:bg-slate-800">Investments</button>
+                <button type="button" onclick="setManagementTab('cities')" id="tab-mgt-cities" class="px-6 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all bg-blue-600 text-white shadow-lg" title="Cities Management">Cities & Population</button>
+                <button type="button" onclick="setManagementTab('investments')" id="tab-mgt-investments" class="px-6 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all text-slate-500 hover:bg-slate-800" title="Investment Projects">Investments</button>
             </div>
 
             <!-- Tab Content -->
@@ -694,8 +695,8 @@
                     <div class="flex justify-between items-center gap-2">
                         <h3 class="text-xl font-bold text-white uppercase italic">City Rankings</h3>
                         <div class="flex gap-2">
-                            <button onclick="bulkCityBuild()" id="btn-bulk-build" class="bg-amber-600 px-6 py-2.5 rounded-xl font-bold text-[10px] text-white shadow-lg hover:scale-105 transition-all uppercase tracking-widest">Bulk Build Cities</button>
-                            <button onclick="bulkDevelopCities()" id="btn-bulk-develop" class="bg-blue-600 px-6 py-2.5 rounded-xl font-bold text-[10px] text-white shadow-lg hover:scale-105 transition-all uppercase tracking-widest">Bulk Develop All</button>
+                            <button type="button" onclick="bulkCityBuild()" id="btn-bulk-build" class="bg-amber-600 px-6 py-2.5 rounded-xl font-bold text-[10px] text-white shadow-lg hover:scale-105 transition-all uppercase tracking-widest" title="Build cities everywhere possible">Bulk Build Cities</button>
+                            <button type="button" onclick="bulkDevelopCities()" id="btn-bulk-develop" class="bg-blue-600 px-6 py-2.5 rounded-xl font-bold text-[10px] text-white shadow-lg hover:scale-105 transition-all uppercase tracking-widest" title="Develop all your cities">Bulk Develop All</button>
                         </div>
                     </div>
                     <div id="mgt-cities-list" class="grid grid-cols-1 gap-3">
@@ -722,7 +723,7 @@
             </div>
 
             <!-- Footer / Close -->
-            <button onclick="closeManagement()" class="absolute top-6 right-6 text-slate-500 hover:text-white transition-colors" title="Close Management">
+            <button type="button" onclick="closeManagement()" class="absolute top-6 right-6 text-slate-500 hover:text-white transition-colors" title="Close Management">
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 256 256"><path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z"></path></svg>
             </button>
         </div>
@@ -736,7 +737,7 @@
                     <h2 class="text-2xl font-black text-white italic uppercase tracking-tighter">Event Feed</h2>
                     <p class="text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em] mt-1">Historical Operation Logs</p>
                 </div>
-                <button onclick="closeEventFeed()" class="text-slate-500 hover:text-white transition-colors">
+                <button type="button" onclick="closeEventFeed()" class="text-slate-500 hover:text-white transition-colors" title="Close event feed">
                     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 256 256"><path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z"></path></svg>
                 </button>
             </div>
@@ -744,7 +745,7 @@
                 <!-- Events will be injected here -->
             </div>
             <div class="p-4 bg-slate-950/30 border-t border-slate-800 text-center">
-                <button onclick="clearEventFeed()" class="text-[10px] font-bold text-red-500 uppercase tracking-widest hover:text-red-400 transition-colors">Clear All Logs</button>
+                <button type="button" onclick="clearEventFeed()" class="text-[10px] font-bold text-red-500 uppercase tracking-widest hover:text-red-400 transition-colors" title="Clear all operation logs">Clear All Logs</button>
             </div>
         </div>
     </div>
@@ -766,8 +767,8 @@
                 </div>
                 
                 <div class="flex gap-3 mt-6">
-                    <button onclick="closeFactionModal()" class="flex-1 bg-slate-800 py-4 rounded-xl font-bold text-slate-400">CANCEL</button>
-                    <button onclick="confirmCreateFaction()" class="flex-1 bg-blue-600 py-4 rounded-xl font-bold text-white shadow-lg">CREATE</button>
+                    <button type="button" onclick="closeFactionModal()" class="flex-1 bg-slate-800 py-4 rounded-xl font-bold text-slate-400" title="Cancel faction creation">CANCEL</button>
+                    <button type="button" onclick="confirmCreateFaction()" class="flex-1 bg-blue-600 py-4 rounded-xl font-bold text-white shadow-lg" title="Create the faction">CREATE</button>
                 </div>
             </div>
         </div>
@@ -784,10 +785,10 @@
                 </div>
                 <div class="h-6 w-[1px] bg-slate-800"></div>
                 <div class="flex gap-2">
-                    <button onclick="setEngineTab('editor')" id="tab-engine-editor" class="px-4 py-1.5 rounded-lg border border-blue-500/40 bg-blue-600/90 text-white text-[10px] font-bold uppercase tracking-wide">Map</button>
-                    <button onclick="setEngineTab('toryscript')" id="tab-engine-toryscript" class="px-4 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-400 text-[10px] font-bold uppercase tracking-wide">Script</button>
-                    <button onclick="setEngineTab('docs')" id="tab-engine-docs" class="px-4 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-400 text-[10px] font-bold uppercase tracking-wide">Docs</button>
-                    <button onclick="setEngineTab('explorer')" id="tab-engine-explorer" class="px-4 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-400 text-[10px] font-bold uppercase tracking-wide">Assets</button>
+                    <button type="button" onclick="setEngineTab('editor')" id="tab-engine-editor" class="px-4 py-1.5 rounded-lg border border-blue-500/40 bg-blue-600/90 text-white text-[10px] font-bold uppercase tracking-wide" title="Map Editor">Map</button>
+                    <button type="button" onclick="setEngineTab('toryscript')" id="tab-engine-toryscript" class="px-4 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-400 text-[10px] font-bold uppercase tracking-wide" title="ToryScript Editor">Script</button>
+                    <button type="button" onclick="setEngineTab('docs')" id="tab-engine-docs" class="px-4 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-400 text-[10px] font-bold uppercase tracking-wide" title="Documentation">Docs</button>
+                    <button type="button" onclick="setEngineTab('explorer')" id="tab-engine-explorer" class="px-4 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-400 text-[10px] font-bold uppercase tracking-wide" title="Asset Explorer">Assets</button>
                 </div>
             </div>
             <div class="flex items-center gap-3">
@@ -796,9 +797,12 @@
                     <div id="engine-status-brush" class="px-2 py-1 rounded-md border border-slate-700 bg-slate-900 text-[9px] text-cyan-300 font-mono uppercase">Brush: water</div>
                     <div id="engine-status-file" class="px-2 py-1 rounded-md border border-slate-700 bg-slate-900 text-[9px] text-emerald-300 font-mono uppercase">File: main.tory</div>
                 </div>
-                <button onclick="saveEngineMap()" class="bg-emerald-600 hover:bg-emerald-500 px-4 py-1.5 rounded-lg text-white text-[10px] font-bold uppercase border border-emerald-400/40 transition-colors">Save Map</button>
-                <button onclick="syncToGitHub()" class="bg-blue-600 hover:bg-blue-500 px-4 py-1.5 rounded-lg text-white text-[10px] font-bold uppercase border border-blue-400/40 transition-colors">Sync to GitHub</button>
-                <button onclick="closeSandboxEngine()" class="bg-slate-800 hover:bg-slate-700 px-4 py-1.5 rounded-lg text-slate-300 text-[10px] font-bold uppercase border border-slate-700 transition-colors">Exit</button>
+                <button type="button" onclick="saveEngineMap()" class="bg-emerald-600 hover:bg-emerald-500 px-4 py-1.5 rounded-lg text-white text-[10px] font-bold uppercase border border-emerald-400/40 transition-colors" title="Save map to workspace">Save Map</button>
+                <button type="button" onclick="syncToGitHub()" class="bg-blue-600 hover:bg-blue-500 px-4 py-1.5 rounded-lg text-white text-[10px] font-bold uppercase border border-blue-400/40 transition-colors" title="Sync current codebase to GitHub">Sync to GitHub</button>
+                <button type="button" onclick="exportToryMap()" class="bg-purple-600 hover:bg-purple-500 px-4 py-1.5 rounded-lg text-white text-[10px] font-bold uppercase border border-purple-400/40 transition-colors" title="Export entire workspace as .torymap">Export Workspace</button>
+                <button type="button" onclick="importToryMapTrigger()" class="bg-slate-700 hover:bg-slate-600 px-4 py-1.5 rounded-lg text-slate-200 text-[10px] font-bold uppercase border border-slate-600 transition-colors" title="Import .torymap workspace">Import Workspace</button>
+                <input type="file" id="torymap-import-input" accept=".torymap" class="hidden" onchange="handleToryMapImport(this)">
+                <button type="button" onclick="closeSandboxEngine()" class="bg-slate-800 hover:bg-slate-700 px-4 py-1.5 rounded-lg text-slate-300 text-[10px] font-bold uppercase border border-slate-700 transition-colors" title="Exit Sandbox Engine">Exit</button>
             </div>
         </div>
 
@@ -814,10 +818,10 @@
                     <div class="flex flex-col gap-1">
                         <span class="text-[8px] text-slate-500 font-bold uppercase">Brush Type</span>
                         <div class="flex gap-2">
-                            <button onclick="setEngineBrush('water')" id="brush-water" aria-label="Water brush" title="Water brush" class="px-3 h-8 rounded border border-cyan-500/60 bg-blue-900 text-cyan-200 text-[10px] font-bold uppercase">Water</button>
-                            <button onclick="setEngineBrush('land')" id="brush-land" aria-label="Land brush" title="Land brush" class="px-3 h-8 rounded border border-slate-700 bg-slate-800 text-slate-300 text-[10px] font-bold uppercase">Land</button>
-                            <button onclick="setEngineBrush('city')" id="brush-city" aria-label="City brush" title="City brush" class="px-3 h-8 rounded border border-slate-700 bg-slate-800 text-slate-300 text-[10px] font-bold uppercase">City</button>
-                            <button onclick="setEngineBrush('capital')" id="brush-capital" aria-label="Capital brush" title="Capital brush" class="px-3 h-8 rounded border border-slate-700 bg-slate-800 text-slate-300 text-[10px] font-bold uppercase">Capital</button>
+                            <button type="button" onclick="setEngineBrush('water')" id="brush-water" aria-label="Water brush" title="Water brush" class="px-3 h-8 rounded border border-cyan-500/60 bg-blue-900 text-cyan-200 text-[10px] font-bold uppercase">Water</button>
+                            <button type="button" onclick="setEngineBrush('land')" id="brush-land" aria-label="Land brush" title="Land brush" class="px-3 h-8 rounded border border-slate-700 bg-slate-800 text-slate-300 text-[10px] font-bold uppercase">Land</button>
+                            <button type="button" onclick="setEngineBrush('city')" id="brush-city" aria-label="City brush" title="City brush" class="px-3 h-8 rounded border border-slate-700 bg-slate-800 text-slate-300 text-[10px] font-bold uppercase">City</button>
+                            <button type="button" onclick="setEngineBrush('capital')" id="brush-capital" aria-label="Capital brush" title="Capital brush" class="px-3 h-8 rounded border border-slate-700 bg-slate-800 text-slate-300 text-[10px] font-bold uppercase">Capital</button>
                         </div>
                     </div>
                     <div class="flex flex-col gap-1">
@@ -837,8 +841,8 @@
                     <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
                         <span class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Explorer</span>
                         <div class="flex gap-2">
-                            <button onclick="vfsCreateFile()" class="text-blue-500 text-xs hover:text-blue-400 transition-colors" title="New File">📄</button>
-                            <button onclick="vfsCreateFolder()" class="text-amber-500 text-xs hover:text-amber-400 transition-colors" title="New Folder">📁</button>
+                            <button type="button" onclick="vfsCreateFile()" class="text-blue-500 text-xs hover:text-blue-400 transition-colors" title="Create New File">📄</button>
+                            <button type="button" onclick="vfsCreateFolder()" class="text-amber-500 text-xs hover:text-amber-400 transition-colors" title="Create New Folder">📁</button>
                         </div>
                     </div>
                     <div id="vfs-tree" class="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
@@ -847,8 +851,8 @@
                 </div>
                 <div class="flex-1 flex flex-col">
                     <div class="p-2 bg-slate-900 border-b border-slate-800 flex gap-2">
-                        <button onclick="runToryScript()" class="bg-blue-600 px-4 py-1 rounded text-[10px] font-bold text-white uppercase hover:bg-blue-500 transition-all">Run Script</button>
-                        <button onclick="saveActiveFile()" class="bg-slate-800 px-4 py-1 rounded text-[10px] font-bold text-slate-400 uppercase hover:bg-slate-700 transition-all">Save</button>
+                        <button type="button" onclick="runToryScript()" class="bg-blue-600 px-4 py-1 rounded text-[10px] font-bold text-white uppercase hover:bg-blue-500 transition-all" title="Compile and run ToryScript">Run Script</button>
+                        <button type="button" onclick="saveActiveFile()" class="bg-slate-800 px-4 py-1 rounded text-[10px] font-bold text-slate-400 uppercase hover:bg-slate-700 transition-all" title="Save current file to VFS">Save</button>
                         <div class="h-4 w-[1px] bg-slate-800 mx-2 self-center"></div>
                         <span id="active-file-path" class="text-[10px] text-slate-500 font-mono self-center truncate max-w-xs">/root/scripts/main.tory</span>
                         <span id="active-file-id" class="ml-auto text-[8px] text-slate-700 font-mono self-center uppercase">ID: s1</span>
@@ -871,7 +875,7 @@
                     <div class="grid grid-cols-1 gap-6">
                         <!-- Function Documentation -->
                         <div class="bg-slate-800/50 p-6 rounded-2xl border border-white/5">
-                            <code class="text-blue-400 font-bold text-sm">fill(x, y, width, height, type)</code>
+                            <code class="text-blue-400 font-bold text-sm">paint(x, y, width, height, type)</code>
                             <p class="text-slate-400 text-xs mt-2">Fills a rectangular area with a specific tile type.</p>
                             <div class="mt-3 space-y-1">
                                 <p class="text-[10px] text-slate-500 uppercase font-bold">Parameters:</p>
@@ -882,32 +886,32 @@
                         </div>
 
                         <div class="bg-slate-800/50 p-6 rounded-2xl border border-white/5">
-                            <code class="text-blue-400 font-bold text-sm">circle(x, y, radius, type)</code>
+                            <code class="text-blue-400 font-bold text-sm">island(x, y, radius, type)</code>
                             <p class="text-slate-400 text-xs mt-2">Creates a circular shape of tiles.</p>
                         </div>
 
                         <div class="bg-slate-800/50 p-6 rounded-2xl border border-white/5">
-                            <code class="text-blue-400 font-bold text-sm">spawnCity(x, y)</code>
+                            <code class="text-blue-400 font-bold text-sm">city(x, y)</code>
                             <p class="text-slate-400 text-xs mt-2">Places a city at the specified coordinates.</p>
                         </div>
 
                         <div class="bg-slate-800/50 p-6 rounded-2xl border border-white/5">
-                            <code class="text-blue-400 font-bold text-sm">spawnCapital(x, y)</code>
+                            <code class="text-blue-400 font-bold text-sm">home(x, y)</code>
                             <p class="text-slate-400 text-xs mt-2">Sets the player starting capital location. Only one capital can exist.</p>
                         </div>
 
                         <div class="bg-slate-800/50 p-6 rounded-2xl border border-white/5">
-                            <code class="text-blue-400 font-bold text-sm">noise(scale, threshold)</code>
+                            <code class="text-blue-400 font-bold text-sm">seed(scale, threshold)</code>
                             <p class="text-slate-400 text-xs mt-2">Generates procedural terrain across the entire map using sine-based noise.</p>
                         </div>
 
                         <div class="bg-slate-800/50 p-6 rounded-2xl border border-white/5">
-                            <code class="text-blue-400 font-bold text-sm">clear()</code>
+                            <code class="text-blue-400 font-bold text-sm">reset()</code>
                             <p class="text-slate-400 text-xs mt-2">Resets the entire map to Land tiles.</p>
                         </div>
 
                         <div class="bg-slate-800/50 p-6 rounded-2xl border border-white/5">
-                            <code class="text-blue-400 font-bold text-sm">log(message)</code>
+                            <code class="text-blue-400 font-bold text-sm">print(message)</code>
                             <p class="text-slate-400 text-xs mt-2">Outputs a message to the engine console.</p>
                         </div>
                     </div>
@@ -916,23 +920,23 @@
                         <h4 class="text-sm font-bold text-white uppercase mb-4">Advanced Example: Archipelago</h4>
                         <pre class="bg-black p-6 rounded-xl text-xs text-emerald-500 font-mono overflow-x-auto">
 // Reset map
-clear();
+reset();
 
 // Generate base terrain
-noise(0.15, 0.4);
+seed(0.15, 0.4);
 
 // Add custom islands
-circle(100, 100, 30, 'land');
-circle(250, 150, 20, 'land');
+island(100, 100, 30, 'land');
+island(250, 150, 20, 'land');
 
 // Place cities
-spawnCity(100, 100);
-spawnCity(250, 150);
+city(100, 100);
+city(250, 150);
 
 // Set start point
-spawnCapital(100, 100);
+home(100, 100);
 
-log("World Generated!");</pre>
+print("World Generated!");</pre>
                     </div>
                 </div>
             </div>
@@ -957,10 +961,10 @@ log("World Generated!");</pre>
             <h1 class="text-3xl font-black text-center text-blue-400 mb-6 italic tracking-tight">TERRITORY.IO</h1>
             
             <div class="grid grid-cols-4 gap-2 mb-6 p-1 rounded-2xl border border-slate-800 bg-slate-950/70">
-                <button id="tab-single" onclick="setLoginTab('single')" class="py-2 rounded-xl font-bold text-[10px] uppercase tracking-wider transition-all border border-blue-500/40 bg-blue-600/90 text-white shadow-[0_8px_20px_rgba(37,99,235,0.35)]">Single</button>
-                <button id="tab-multi" onclick="setLoginTab('multi')" class="py-2 rounded-xl font-bold text-[10px] uppercase tracking-wider transition-all border border-transparent bg-transparent text-slate-500 hover:text-slate-300 hover:bg-slate-800/70">Multi</button>
-                <button id="tab-custom" onclick="setLoginTab('custom')" class="py-2 rounded-xl font-bold text-[10px] uppercase tracking-wider transition-all border border-transparent bg-transparent text-slate-500 hover:text-slate-300 hover:bg-slate-800/70">Custom</button>
-                <button id="tab-sandbox" onclick="setLoginTab('sandbox')" class="py-2 rounded-xl font-bold text-[10px] uppercase tracking-wider transition-all border border-transparent bg-transparent text-slate-500 hover:text-slate-300 hover:bg-slate-800/70">Sandbox</button>
+                <button type="button" id="tab-single" onclick="setLoginTab('single')" class="py-2 rounded-xl font-bold text-[10px] uppercase tracking-wider transition-all border border-blue-500/40 bg-blue-600/90 text-white shadow-[0_8px_20px_rgba(37,99,235,0.35)]" title="Single Player Mode">Single</button>
+                <button type="button" id="tab-multi" onclick="setLoginTab('multi')" class="py-2 rounded-xl font-bold text-[10px] uppercase tracking-wider transition-all border border-transparent bg-transparent text-slate-500 hover:text-slate-300 hover:bg-slate-800/70" title="Multiplayer Mode (External)">Multi</button>
+                <button type="button" id="tab-custom" onclick="setLoginTab('custom')" class="py-2 rounded-xl font-bold text-[10px] uppercase tracking-wider transition-all border border-transparent bg-transparent text-slate-500 hover:text-slate-300 hover:bg-slate-800/70" title="Custom Assets Mode">Custom</button>
+                <button type="button" id="tab-sandbox" onclick="setLoginTab('sandbox')" class="py-2 rounded-xl font-bold text-[10px] uppercase tracking-wider transition-all border border-transparent bg-transparent text-slate-500 hover:text-slate-300 hover:bg-slate-800/70" title="Sandbox Engine Mode">Sandbox</button>
             </div>
 
             <div id="single-panel" class="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
@@ -1006,7 +1010,7 @@ log("World Generated!");</pre>
                     </div>
                 </div>
 
-                <button onclick="startGame('single')" class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-xl font-bold text-white shadow-[0_12px_30px_rgba(37,99,235,0.35)] active:scale-95 transition-all">
+                <button type="button" onclick="startGame('single')" class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-xl font-bold text-white shadow-[0_12px_30px_rgba(37,99,235,0.35)] active:scale-95 transition-all" title="Spawn into the world">
                     SPAWN
                 </button>
             </div>
@@ -1040,18 +1044,18 @@ log("World Generated!");</pre>
                         </label>
                     </div>
                     <p class="text-[9px] text-center text-slate-500 uppercase font-bold">Upload an image to use as territory pattern</p>
-                    <button onclick="setLoginTab('single')" class="w-full bg-slate-700 hover:bg-slate-600 py-3 rounded-xl font-bold text-white text-[10px] uppercase tracking-wider transition-colors">Back to Start</button>
+                    <button type="button" onclick="setLoginTab('single')" class="w-full bg-slate-700 hover:bg-slate-600 py-3 rounded-xl font-bold text-white text-[10px] uppercase tracking-wider transition-colors" title="Go back to single player setup">Back to Start</button>
                 </div>
             </div>
 
             <div id="sandbox-panel" class="hidden rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
                 <div class="space-y-4">
-                    <button onclick="openSandboxEngine()" class="w-full bg-amber-600 hover:bg-amber-500 py-4 rounded-xl font-bold text-white shadow-[0_12px_30px_rgba(217,119,6,0.35)] active:scale-95 transition-all uppercase text-xs">
+                    <button type="button" onclick="openSandboxEngine()" class="w-full bg-amber-600 hover:bg-amber-500 py-4 rounded-xl font-bold text-white shadow-[0_12px_30px_rgba(217,119,6,0.35)] active:scale-95 transition-all uppercase text-xs" title="Open the map creation engine">
                         Open Map Engine
                     </button>
                     <div class="relative">
                         <input type="file" id="map-upload" accept=".json" aria-label="Upload map file" title="Upload map file" class="hidden" onchange="loadCustomMap(this)">
-                        <button onclick="document.getElementById('map-upload').click()" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-700 py-4 rounded-xl font-bold text-slate-300 shadow-lg active:scale-95 transition-all uppercase text-xs">
+                        <button type="button" onclick="document.getElementById('map-upload').click()" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-700 py-4 rounded-xl font-bold text-slate-300 shadow-lg active:scale-95 transition-all uppercase text-xs" title="Upload a previously saved map">
                             Upload & Play Map
                         </button>
                     </div>
@@ -1078,19 +1082,19 @@ log("World Generated!");</pre>
                 <div id="leaderboard-ui" class="bg-slate-900/90 backdrop-blur-md p-4 rounded-2xl border border-white/5 pointer-events-auto shadow-xl w-64">
                     <div class="flex justify-between items-center mb-3">
                         <div class="flex gap-2">
-                            <button onclick="openResearch()" class="p-2 bg-blue-600/20 hover:bg-blue-600/40 rounded-lg border border-blue-500/30 transition-all" title="Open Research">
+                            <button type="button" onclick="openResearch()" class="p-2 bg-blue-600/20 hover:bg-blue-600/40 rounded-lg border border-blue-500/30 transition-all" title="Open Research">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#3b82f6" viewBox="0 0 256 256"><path d="M224,128a96,96,0,1,1-96-96A96,96,0,0,1,224,128Z" opacity="0.2"></path><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm12-88a12,12,0,1,1-12-12A12,12,0,0,1,140,128Z"></path></svg>
                             </button>
-                            <button onclick="openRankingModal()" class="p-2 bg-purple-600/20 hover:bg-purple-600/40 rounded-lg border border-purple-500/30 transition-all" title="Ranking HUD">
+                            <button type="button" onclick="openRankingModal()" class="p-2 bg-purple-600/20 hover:bg-purple-600/40 rounded-lg border border-purple-500/30 transition-all" title="Ranking HUD">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#a855f7" viewBox="0 0 256 256"><path d="M232,208a8,8,0,0,1-8,8H32a8,8,0,0,1,0-16H224A8,8,0,0,1,232,208ZM40,168a8,8,0,0,0,8,8H80a8,8,0,0,0,8-8V104a8,8,0,0,0-8-8H48a8,8,0,0,0-8,8Zm120,0a8,8,0,0,0,8,8h32a8,8,0,0,0,8-8V40a8,8,0,0,0-8-8H168a8,8,0,0,0-8,8Zm-64,0a8,8,0,0,0,8,8h32a8,8,0,0,0,8-8V72a8,8,0,0,0-8-8H104a8,8,0,0,0-8,8Z"></path></svg>
                             </button>
-                            <button onclick="openManagement()" class="p-2 bg-emerald-600/20 hover:bg-emerald-600/40 rounded-lg border border-emerald-500/30 transition-all" title="Management HUD">
+                            <button type="button" onclick="openManagement()" class="p-2 bg-emerald-600/20 hover:bg-emerald-600/40 rounded-lg border border-emerald-500/30 transition-all" title="Management HUD">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#10b981" viewBox="0 0 256 256"><path d="M224,120v16a8,8,0,0,1-8,8H144v72a8,8,0,0,1-8,8H120a8,8,0,0,1-8-8V144H40a8,8,0,0,1-8-8V120a8,8,0,0,1,8-8h72V40a8,8,0,0,1,8-8h16a8,8,0,0,1,8,8v72h72A8,8,0,0,1,224,120Z"></path></svg>
                             </button>
-                            <button onclick="openEventFeed()" class="p-2 bg-slate-600/20 hover:bg-slate-600/40 rounded-lg border border-slate-500/30 transition-all" title="Event Feed">
+                            <button type="button" onclick="openEventFeed()" class="p-2 bg-slate-600/20 hover:bg-slate-600/40 rounded-lg border border-slate-500/30 transition-all" title="Event Feed">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#94a3b8" viewBox="0 0 256 256"><path d="M200,32H56A16,16,0,0,0,40,48V208a16,16,0,0,0,16,16H200a16,16,0,0,0,16-16V48A16,16,0,0,0,200,32Zm0,176H56V48H200V208ZM184,96a8,8,0,0,1-8,8H80a8,8,0,0,1,0-16h96A8,8,0,0,1,184,96Zm0,32a8,8,0,0,1-8,8H80a8,8,0,0,1,0-16h96A8,8,0,0,1,184,128Zm0,32a8,8,0,0,1-8,8H80a8,8,0,0,1,0-16h96A8,8,0,0,1,184,160Z"></path></svg>
                             </button>
-                            <button id="btn-open-faction" onclick="openFactionModal()" class="hidden p-2 bg-emerald-600/20 hover:bg-emerald-600/40 rounded-lg border border-emerald-500/30 transition-all" title="Create Faction">
+                            <button type="button" id="btn-open-faction" onclick="openFactionModal()" class="hidden p-2 bg-emerald-600/20 hover:bg-emerald-600/40 rounded-lg border border-emerald-500/30 transition-all" title="Create Faction">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#10b981" viewBox="0 0 256 256"><path d="M200,128a72,72,0,1,1-72-72A72,72,0,0,1,200,128Z" opacity="0.2"></path><path d="M128,48a80,80,0,1,0,80,80A80.09,80.09,0,0,0,128,48Zm0,144a64,64,0,1,1,64-64A64.07,64.07,0,0,1,128,192Zm40-64a8,8,0,0,1-8,8H136v32a8,8,0,0,1-16,0V136H88a8,8,0,0,1,0-16h32V88a8,8,0,0,1,16,0v32h24A8,8,0,0,1,168,128Z"></path></svg>
                             </button>
                         </div>
@@ -1330,7 +1334,8 @@ log("World Generated!");</pre>
                         type: 'folder',
                         children: [
                             { id: 'f1', name: 'scripts', type: 'folder', children: [
-                                { id: 's1', name: 'main.tory', type: 'script', content: '// ToryScript v2.5\nlog("Engine Booted...");\n\n// Run on every game tick\nfunction onTick() {\n    // Custom logic here\n}\n\n// Run on game start\nfunction onStart() {\n    noise(0.1, 0.45);\n    spawnCapital(192, 108);\n}' }
+                                { id: 's1', name: 'main.tory', type: 'script', content: '// ToryScript v2.6\nprint("Engine Booted...");\n\n// Run on game start\nfunction onStart() {\n    reset();\n    seed(0.1, 0.45);\n    home(192, 108);\n}\n\nonStart();' },
+                                { id: 's2', name: 'archipelago.tory', type: 'script', content: '// ToryScript Archipelago Generator\nreset();\nseed(0.2, 0.5);\n\n// Add some manual islands\nisland(100, 100, 20, "land");\nisland(284, 150, 15, "land");\n\n// Add cities\ncity(100, 100);\ncity(284, 150);\n\nhome(100, 100);\nprint("Archipelago Generated!");' }
                             ]},
                             { id: 'f2', name: 'maps', type: 'folder', children: [] }
                         ]
@@ -1508,6 +1513,54 @@ log("World Generated!");</pre>
                 if (panel) panel.classList.toggle('hidden', t !== tab);
             });
             if (tab === 'explorer') updateEngineExplorer();
+        }
+
+        function exportToryMap() {
+            const workspace = {
+                name: "Territory Workspace",
+                version: state.version,
+                vfs: state.engine.vfs,
+                mapData: state.engine.mapData,
+                timestamp: Date.now()
+            };
+            const json = JSON.stringify(workspace, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `workspace_${Date.now()}.torymap`;
+            a.click();
+            URL.revokeObjectURL(url);
+            notify("Workspace exported as .torymap", "success");
+        }
+
+        function importToryMapTrigger() {
+            document.getElementById('torymap-import-input').click();
+        }
+
+        function handleToryMapImport(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (data.vfs && data.version) {
+                        state.engine.vfs = data.vfs;
+                        if (data.mapData) state.engine.mapData = data.mapData;
+                        localStorage.setItem('tory_engine_vfs', JSON.stringify(state.engine.vfs));
+                        updateVFSTree();
+                        loadActiveFile();
+                        drawEngineMap();
+                        notify("Workspace imported successfully!", "success");
+                    } else {
+                        throw new Error("Invalid .torymap file format");
+                    }
+                } catch (err) {
+                    alert("Import failed: " + err.message);
+                }
+            };
+            reader.readAsText(file);
         }
 
         // --- New VFS Core Functions ---
@@ -1762,9 +1815,32 @@ log("World Generated!");</pre>
         }
 
         // --- ToryScript Enhanced Engine ---
+        function compileToryScript(code) {
+            // Replace ToryScript keywords with internal API calls
+            let compiled = code;
+            
+            // Keyword mapping (Regex based transpilation)
+            const mapping = [
+                { pattern: /\bpaint\s*\(/g, replacement: 'fill(' },
+                { pattern: /\bisland\s*\(/g, replacement: 'circle(' },
+                { pattern: /\bseed\s*\(/g, replacement: 'noise(' },
+                { pattern: /\bhome\s*\(/g, replacement: 'spawnCapital(' },
+                { pattern: /\bcity\s*\(/g, replacement: 'spawnCity(' },
+                { pattern: /\breset\s*\(\)/g, replacement: 'clear()' },
+                { pattern: /\bprint\s*\(/g, replacement: 'log(' }
+            ];
+
+            mapping.forEach(m => {
+                compiled = compiled.replace(m.pattern, m.replacement);
+            });
+
+            return compiled;
+        }
+
         function runToryScript() {
             saveActiveFile(false);
-            const code = document.getElementById('tory-editor').value;
+            const originalCode = document.getElementById('tory-editor').value;
+            const compiledCode = compileToryScript(originalCode);
             const consoleEl = document.getElementById('tory-console');
             consoleEl.innerHTML += `<br>> Executing ToryScript...`;
             
@@ -1829,7 +1905,7 @@ log("World Generated!");</pre>
                     VERSION: state.version
                 };
 
-                const scriptFunc = new Function(...Object.keys(api), code);
+                const scriptFunc = new Function(...Object.keys(api), compiledCode);
                 scriptFunc(...Object.values(api));
                 
                 drawEngineMap();
