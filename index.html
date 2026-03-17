@@ -895,6 +895,31 @@
                         </div>
 
                         <div class="bg-slate-800/50 p-6 rounded-2xl border border-white/5">
+                            <code class="text-blue-400 font-bold text-sm">research(tree, key)</code>
+                            <p class="text-slate-400 text-xs mt-2">Returns current research level for a tree/key.</p>
+                        </div>
+
+                        <div class="bg-slate-800/50 p-6 rounded-2xl border border-white/5">
+                            <code class="text-blue-400 font-bold text-sm">upgrade(tree, key, value)</code>
+                            <p class="text-slate-400 text-xs mt-2">Sets research level for a tree/key.</p>
+                        </div>
+
+                        <div class="bg-slate-800/50 p-6 rounded-2xl border border-white/5">
+                            <code class="text-blue-400 font-bold text-sm">bot(idx, property, value)</code>
+                            <p class="text-slate-400 text-xs mt-2">Get/set bot properties (e.g., 'difficulty', 'balance').</p>
+                        </div>
+
+                        <div class="bg-slate-800/50 p-6 rounded-2xl border border-white/5">
+                            <code class="text-blue-400 font-bold text-sm">player(property, value)</code>
+                            <p class="text-slate-400 text-xs mt-2">Get/set player properties (e.g., 'balance').</p>
+                        </div>
+
+                        <div class="bg-slate-800/50 p-6 rounded-2xl border border-white/5">
+                            <code class="text-blue-400 font-bold text-sm">id(id_string)</code>
+                            <p class="text-slate-400 text-xs mt-2">Find entity by ID (e.g., 'pr12') and return summary.</p>
+                        </div>
+
+                        <div class="bg-slate-800/50 p-6 rounded-2xl border border-white/5">
                             <code class="text-blue-400 font-bold text-sm">island(x, y, radius, type)</code>
                             <p class="text-slate-400 text-xs mt-2">Creates a circular shape of tiles.</p>
                         </div>
@@ -1845,7 +1870,12 @@ print("World Generated!");</pre>
                 { pattern: /\bprint\s*\(/g, replacement: 'log(' },
                 { pattern: /\bline\s*\(/g, replacement: 'drawLine(' },
                 { pattern: /\bget\s*\(/g, replacement: 'getTile(' },
-                { pattern: /\bset\s*\(/g, replacement: 'setTile(' }
+                { pattern: /\bset\s*\(/g, replacement: 'setTile(' },
+                { pattern: /\bresearch\s*\(/g, replacement: 'getResearch(' },
+                { pattern: /\bupgrade\s*\(/g, replacement: 'setResearch(' },
+                { pattern: /\bbot\s*\(/g, replacement: 'botLogic(' },
+                { pattern: /\bplayer\s*\(/g, replacement: 'playerLogic(' },
+                { pattern: /\bid\s*\(/g, replacement: 'getEntityById(' }
             ];
 
             mapping.forEach(m => {
@@ -1941,11 +1971,39 @@ print("World Generated!");</pre>
                     },
                     clear: () => state.engine.mapData.tileTypes.fill(1),
                     
+                    // --- Extended Logic API ---
+                    getResearch: (tree, key) => state.research.trees[tree]?.[key] || 0,
+                    setResearch: (tree, key, val) => { 
+                        if (state.research.trees[tree]) {
+                            state.research.trees[tree][key] = val;
+                            updateResearchUI();
+                        }
+                    },
+                    botLogic: (idx, prop, val) => {
+                        const bot = state.entities[idx];
+                        if (!bot || bot.type !== 'bot') return null;
+                        if (val !== undefined) bot[prop] = val;
+                        return bot[prop];
+                    },
+                    playerLogic: (prop, val) => {
+                        const player = state.entities[1];
+                        if (val !== undefined) {
+                            player[prop] = val;
+                            if (prop === 'balance') state.balance = val;
+                            updateUI(state.lastMaxBalance);
+                        }
+                        return player[prop];
+                    },
+                    getEntityById: (id) => {
+                        const ent = state.entities.find(e => e.id === id);
+                        return ent ? { idx: state.entities.indexOf(ent), name: ent.name, type: ent.type } : null;
+                    },
+
                     // Helpers
                     random: (min, max) => Math.floor(Math.random() * (max - min + 1)) + min,
                     
                     // Game State / Entity API
-                    getEntities: () => state.entities.map(e => ({ name: e.name, balance: e.balance, tiles: e.ownedCount })),
+                    getEntities: () => state.entities.map((e, i) => ({ idx: i, id: e.id, name: e.name, balance: e.balance, tiles: e.ownedCount })),
                     setBalance: (amt) => { state.balance = amt; state.entities[1].balance = amt; updateUI(state.lastMaxBalance); },
                     notify: (msg, type) => notify(msg, type),
                     log: (msg) => { consoleEl.innerHTML += `<br>> ${msg}`; consoleEl.scrollTop = consoleEl.scrollHeight; },
