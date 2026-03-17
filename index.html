@@ -762,6 +762,7 @@
                 <div class="flex gap-2">
                     <button onclick="setEngineTab('editor')" id="tab-engine-editor" class="px-4 py-1.5 rounded-lg bg-blue-600 text-white text-[10px] font-bold uppercase">Map Editor</button>
                     <button onclick="setEngineTab('toryscript')" id="tab-engine-script" class="px-4 py-1.5 rounded-lg bg-slate-800 text-slate-400 text-[10px] font-bold uppercase">ToryScript</button>
+                    <button onclick="setEngineTab('docs')" id="tab-engine-docs" class="px-4 py-1.5 rounded-lg bg-slate-800 text-slate-400 text-[10px] font-bold uppercase">Docs</button>
                     <button onclick="setEngineTab('explorer')" id="tab-engine-explorer" class="px-4 py-1.5 rounded-lg bg-slate-800 text-slate-400 text-[10px] font-bold uppercase">Explorer</button>
                 </div>
             </div>
@@ -817,6 +818,83 @@
                     <textarea id="tory-editor" spellcheck="false" class="flex-1 bg-slate-950 text-slate-300 font-mono text-sm p-6 outline-none resize-none whitespace-pre overflow-x-auto" placeholder="// ToryScript - Automate your map creation\n// Example: fill(0, 0, 10, 10, 'water')"></textarea>
                     <div id="tory-console" class="h-32 bg-black border-t border-slate-800 p-4 font-mono text-[10px] text-emerald-500 overflow-y-auto">
                         > ToryScript Engine Ready.
+                    </div>
+                </div>
+            </div>
+
+            <!-- ToryScript Documentation Tab -->
+            <div id="engine-content-docs" class="hidden flex-1 bg-slate-900 p-8 overflow-y-auto">
+                <div class="max-w-3xl mx-auto space-y-8">
+                    <div>
+                        <h3 class="text-2xl font-black text-white italic uppercase mb-2">ToryScript API</h3>
+                        <p class="text-slate-400 text-sm">ToryScript is a JavaScript-based API for generating custom maps in Territory.io.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-6">
+                        <!-- Function Documentation -->
+                        <div class="bg-slate-800/50 p-6 rounded-2xl border border-white/5">
+                            <code class="text-blue-400 font-bold text-sm">fill(x, y, width, height, type)</code>
+                            <p class="text-slate-400 text-xs mt-2">Fills a rectangular area with a specific tile type.</p>
+                            <div class="mt-3 space-y-1">
+                                <p class="text-[10px] text-slate-500 uppercase font-bold">Parameters:</p>
+                                <ul class="text-[10px] text-slate-400 list-disc list-inside">
+                                    <li><code class="text-slate-300">type</code>: 'water' (0) or 'land' (1)</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-800/50 p-6 rounded-2xl border border-white/5">
+                            <code class="text-blue-400 font-bold text-sm">circle(x, y, radius, type)</code>
+                            <p class="text-slate-400 text-xs mt-2">Creates a circular shape of tiles.</p>
+                        </div>
+
+                        <div class="bg-slate-800/50 p-6 rounded-2xl border border-white/5">
+                            <code class="text-blue-400 font-bold text-sm">spawnCity(x, y)</code>
+                            <p class="text-slate-400 text-xs mt-2">Places a city at the specified coordinates.</p>
+                        </div>
+
+                        <div class="bg-slate-800/50 p-6 rounded-2xl border border-white/5">
+                            <code class="text-blue-400 font-bold text-sm">spawnCapital(x, y)</code>
+                            <p class="text-slate-400 text-xs mt-2">Sets the player starting capital location. Only one capital can exist.</p>
+                        </div>
+
+                        <div class="bg-slate-800/50 p-6 rounded-2xl border border-white/5">
+                            <code class="text-blue-400 font-bold text-sm">noise(scale, threshold)</code>
+                            <p class="text-slate-400 text-xs mt-2">Generates procedural terrain across the entire map using sine-based noise.</p>
+                        </div>
+
+                        <div class="bg-slate-800/50 p-6 rounded-2xl border border-white/5">
+                            <code class="text-blue-400 font-bold text-sm">clear()</code>
+                            <p class="text-slate-400 text-xs mt-2">Resets the entire map to Land tiles.</p>
+                        </div>
+
+                        <div class="bg-slate-800/50 p-6 rounded-2xl border border-white/5">
+                            <code class="text-blue-400 font-bold text-sm">log(message)</code>
+                            <p class="text-slate-400 text-xs mt-2">Outputs a message to the engine console.</p>
+                        </div>
+                    </div>
+
+                    <div class="pt-8 border-t border-slate-800">
+                        <h4 class="text-sm font-bold text-white uppercase mb-4">Advanced Example: Archipelago</h4>
+                        <pre class="bg-black p-6 rounded-xl text-xs text-emerald-500 font-mono overflow-x-auto">
+// Reset map
+clear();
+
+// Generate base terrain
+noise(0.15, 0.4);
+
+// Add custom islands
+circle(100, 100, 30, 'land');
+circle(250, 150, 20, 'land');
+
+// Place cities
+spawnCity(100, 100);
+spawnCity(250, 150);
+
+// Set start point
+spawnCapital(100, 100);
+
+log("World Generated!");</pre>
                     </div>
                 </div>
             </div>
@@ -1111,7 +1189,7 @@
         };
 
         const state = {
-            version: '2.4.2', // Current version tag (Sandbox Fixes & Diagnostics)
+            version: '2.4.3', // Current version tag (ToryScript Docs & API)
             username: '',
             playerId: 'pr' + Math.floor(Math.random() * 90 + 10), // Unique 2-digit ID
             initialized: false, // Prevent multiple initializations
@@ -1339,11 +1417,11 @@
 
         function setEngineTab(tab) {
             state.engine.activeTab = tab;
-            ['editor', 'script', 'explorer'].forEach(t => {
+            ['editor', 'script', 'docs', 'explorer'].forEach(t => {
                 const btn = document.getElementById(`tab-engine-${t}`);
                 const panel = document.getElementById(`engine-content-${t === 'script' ? 'toryscript' : t}`);
-                btn.className = t === tab ? 'px-4 py-1.5 rounded-lg bg-blue-600 text-white text-[10px] font-bold uppercase' : 'px-4 py-1.5 rounded-lg bg-slate-800 text-slate-400 text-[10px] font-bold uppercase';
-                panel.classList.toggle('hidden', t !== tab);
+                if (btn) btn.className = t === tab ? 'px-4 py-1.5 rounded-lg bg-blue-600 text-white text-[10px] font-bold uppercase' : 'px-4 py-1.5 rounded-lg bg-slate-800 text-slate-400 text-[10px] font-bold uppercase';
+                if (panel) panel.classList.toggle('hidden', t !== tab);
             });
             if (tab === 'explorer') updateEngineExplorer();
         }
@@ -1364,6 +1442,25 @@
                                 if (j >= 0 && j < CONFIG.COLS && i >= 0 && i < CONFIG.ROWS) {
                                     state.engine.mapData.tileTypes[i * CONFIG.COLS + j] = t;
                                 }
+                            }
+                        }
+                    },
+                    circle: (x, y, r, type) => {
+                        const t = type === 'water' ? 0 : 1;
+                        for (let i = y - r; i <= y + r; i++) {
+                            for (let j = x - r; j <= x + r; j++) {
+                                if (j >= 0 && j < CONFIG.COLS && i >= 0 && i < CONFIG.ROWS) {
+                                    const dist = Math.sqrt(Math.pow(j - x, 2) + Math.pow(i - y, 2));
+                                    if (dist <= r) state.engine.mapData.tileTypes[i * CONFIG.COLS + j] = t;
+                                }
+                            }
+                        }
+                    },
+                    noise: (scale = 0.1, threshold = 0.45) => {
+                        for (let i = 0; i < CONFIG.ROWS; i++) {
+                            for (let j = 0; j < CONFIG.COLS; j++) {
+                                const val = Math.sin(j * scale) * Math.cos(i * scale);
+                                state.engine.mapData.tileTypes[i * CONFIG.COLS + j] = val > threshold ? 0 : 1;
                             }
                         }
                     },
