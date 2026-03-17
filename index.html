@@ -728,6 +728,27 @@
         </div>
     </div>
 
+    <!-- Event Feed Modal -->
+    <div id="event-feed-modal" class="hidden fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[900] flex items-center justify-center p-6">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-2xl h-[600px] flex flex-col overflow-hidden shadow-2xl">
+            <div class="p-8 border-b border-slate-800 flex justify-between items-center bg-slate-950/50">
+                <div>
+                    <h2 class="text-2xl font-black text-white italic uppercase tracking-tighter">Event Feed</h2>
+                    <p class="text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em] mt-1">Historical Operation Logs</p>
+                </div>
+                <button onclick="closeEventFeed()" class="text-slate-500 hover:text-white transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 256 256"><path d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z"></path></svg>
+                </button>
+            </div>
+            <div id="event-list" class="flex-1 p-8 overflow-y-auto custom-scrollbar space-y-4">
+                <!-- Events will be injected here -->
+            </div>
+            <div class="p-4 bg-slate-950/30 border-t border-slate-800 text-center">
+                <button onclick="clearEventFeed()" class="text-[10px] font-bold text-red-500 uppercase tracking-widest hover:text-red-400 transition-colors">Clear All Logs</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Faction Creator Modal -->
     <div id="faction-modal" class="hidden fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[850] flex items-center justify-center p-6">
         <div class="bg-slate-900 border border-slate-800 p-8 rounded-3xl w-full max-w-md shadow-2xl">
@@ -759,7 +780,7 @@
             <div class="flex items-center gap-4">
                 <div class="flex items-center gap-3">
                     <h2 class="text-xl font-black text-amber-400 italic uppercase tracking-tight">ToyEngine Studio</h2>
-                    <span class="px-2 py-0.5 rounded-md border border-amber-400/30 bg-amber-500/10 text-[9px] font-bold text-amber-300 uppercase tracking-widest">v2.5.1</span>
+                    <span class="px-2 py-0.5 rounded-md border border-amber-400/30 bg-amber-500/10 text-[9px] font-bold text-amber-300 uppercase tracking-widest">v2.6.0</span>
                 </div>
                 <div class="h-6 w-[1px] bg-slate-800"></div>
                 <div class="flex gap-2">
@@ -776,6 +797,7 @@
                     <div id="engine-status-file" class="px-2 py-1 rounded-md border border-slate-700 bg-slate-900 text-[9px] text-emerald-300 font-mono uppercase">File: main.tory</div>
                 </div>
                 <button onclick="saveEngineMap()" class="bg-emerald-600 hover:bg-emerald-500 px-4 py-1.5 rounded-lg text-white text-[10px] font-bold uppercase border border-emerald-400/40 transition-colors">Save Map</button>
+                <button onclick="syncToGitHub()" class="bg-blue-600 hover:bg-blue-500 px-4 py-1.5 rounded-lg text-white text-[10px] font-bold uppercase border border-blue-400/40 transition-colors">Sync to GitHub</button>
                 <button onclick="closeSandboxEngine()" class="bg-slate-800 hover:bg-slate-700 px-4 py-1.5 rounded-lg text-slate-300 text-[10px] font-bold uppercase border border-slate-700 transition-colors">Exit</button>
             </div>
         </div>
@@ -833,7 +855,7 @@
                     </div>
                     <textarea id="tory-editor" spellcheck="false" class="flex-1 bg-slate-950 text-slate-300 font-mono text-sm p-6 outline-none resize-none whitespace-pre overflow-x-auto" placeholder="// ToryScript - Automate your map creation\n// Example: fill(0, 0, 10, 10, 'water')"></textarea>
                     <div id="tory-console" class="h-32 bg-black border-t border-slate-800 p-4 font-mono text-[10px] text-emerald-500 overflow-y-auto">
-                        > ToryScript Engine v2.5.1 Initialized.
+                        > ToryScript Engine v2.6.0 Initialized.
                     </div>
                 </div>
             </div>
@@ -931,7 +953,7 @@ log("World Generated!");</pre>
         <div class="bg-slate-900/90 backdrop-blur-xl p-8 rounded-3xl border border-slate-700/80 shadow-[0_30px_80px_rgba(2,6,23,0.9)] w-full max-w-md">
             <div class="flex items-center justify-between mb-4">
                 <span class="px-3 py-1 rounded-full border border-cyan-500/30 bg-cyan-500/10 text-[9px] text-cyan-300 font-bold uppercase tracking-[0.2em]">Command Center</span>
-                <span class="px-2 py-1 rounded-md border border-slate-700 bg-slate-950 text-[9px] text-slate-400 font-mono uppercase">v2.5.1</span>
+                <span class="px-2 py-1 rounded-md border border-slate-700 bg-slate-950 text-[9px] text-slate-400 font-mono uppercase">v2.6.0</span>
             </div>
             <h1 class="text-3xl font-black text-center text-blue-400 mb-2 italic tracking-tight">TERRITORY.IO</h1>
             <p class="text-[10px] text-center text-slate-500 mb-6 uppercase tracking-[0.25em] font-bold">Strategic Operations Console</p>
@@ -1066,6 +1088,9 @@ log("World Generated!");</pre>
                             </button>
                             <button onclick="openManagement()" class="p-2 bg-emerald-600/20 hover:bg-emerald-600/40 rounded-lg border border-emerald-500/30 transition-all" title="Management HUD">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#10b981" viewBox="0 0 256 256"><path d="M224,120v16a8,8,0,0,1-8,8H144v72a8,8,0,0,1-8,8H120a8,8,0,0,1-8-8V144H40a8,8,0,0,1-8-8V120a8,8,0,0,1,8-8h72V40a8,8,0,0,1,8-8h16a8,8,0,0,1,8,8v72h72A8,8,0,0,1,224,120Z"></path></svg>
+                            </button>
+                            <button onclick="openEventFeed()" class="p-2 bg-slate-600/20 hover:bg-slate-600/40 rounded-lg border border-slate-500/30 transition-all" title="Event Feed">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#94a3b8" viewBox="0 0 256 256"><path d="M200,32H56A16,16,0,0,0,40,48V208a16,16,0,0,0,16,16H200a16,16,0,0,0,16-16V48A16,16,0,0,0,200,32Zm0,176H56V48H200V208ZM184,96a8,8,0,0,1-8,8H80a8,8,0,0,1,0-16h96A8,8,0,0,1,184,96Zm0,32a8,8,0,0,1-8,8H80a8,8,0,0,1,0-16h96A8,8,0,0,1,184,128Zm0,32a8,8,0,0,1-8,8H80a8,8,0,0,1,0-16h96A8,8,0,0,1,184,160Z"></path></svg>
                             </button>
                             <button id="btn-open-faction" onclick="openFactionModal()" class="hidden p-2 bg-emerald-600/20 hover:bg-emerald-600/40 rounded-lg border border-emerald-500/30 transition-all" title="Create Faction">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#10b981" viewBox="0 0 256 256"><path d="M200,128a72,72,0,1,1-72-72A72,72,0,0,1,200,128Z" opacity="0.2"></path><path d="M128,48a80,80,0,1,0,80,80A80.09,80.09,0,0,0,128,48Zm0,144a64,64,0,1,1,64-64A64.07,64.07,0,0,1,128,192Zm40-64a8,8,0,0,1-8,8H136v32a8,8,0,0,1-16,0V136H88a8,8,0,0,1,0-16h32V88a8,8,0,0,1,16,0v32h24A8,8,0,0,1,168,128Z"></path></svg>
@@ -1209,7 +1234,7 @@ log("World Generated!");</pre>
         };
 
         const state = {
-            version: '2.5.1', // Current version tag (VFS Cleanup & Diagnostics)
+            version: '2.6.0', // Current version tag (Event Feed & Sync)
             username: '',
             playerId: 'pr' + Math.floor(Math.random() * 90 + 10), // Unique 2-digit ID
             initialized: false, // Prevent multiple initializations
@@ -1248,6 +1273,7 @@ log("World Generated!");</pre>
             management: { activeTab: 'cities' },
             
             planning: { active: false, turns: Array.from({length: 10}, () => []), activeTurn: 0, warId: null, assaultType: 'support' },
+            events: [], // Historical event log: { time: Date.now(), msg: '...', type: 'war'|'alliance'|'collapse' }
             botAllyCooldowns: {}, // { entityIdx: timestamp }
             assaultInProgress: false,
             activeWarId: null,
@@ -1867,6 +1893,61 @@ log("World Generated!");</pre>
                 } catch (e) { console.error("Failed to load saved map", e); }
             }
         });
+
+        async function syncToGitHub() {
+            const pat = prompt("Enter GitHub Personal Access Token (PAT):", "");
+            if (!pat) return;
+
+            const owner = 'everythingtt';
+            const repo = 'territory-io';
+            const path = 'index.html';
+            const branch = 'main';
+
+            notify("Syncing to GitHub...", "info");
+
+            try {
+                // 1. Get the current file's SHA
+                const getUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`;
+                const getRes = await fetch(getUrl, {
+                    headers: { 'Authorization': `token ${pat}` }
+                });
+                
+                if (!getRes.ok) throw new Error(`Failed to fetch file info: ${getRes.statusText}`);
+                const fileData = await getRes.json();
+                const sha = fileData.sha;
+
+                // 2. Prepare the update
+                // We'll send the entire content of index.html
+                // Since this is running in the browser, we need the source of the CURRENT page.
+                const content = document.documentElement.outerHTML;
+                const encodedContent = btoa(unescape(encodeURIComponent(content)));
+
+                const putUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+                const putRes = await fetch(putUrl, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${pat}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: `Update index.html via ToyEngine Studio v${state.version}`,
+                        content: encodedContent,
+                        sha: sha,
+                        branch: branch
+                    })
+                });
+
+                if (putRes.ok) {
+                    notify("Successfully synced to GitHub!", "success");
+                } else {
+                    const error = await putRes.json();
+                    throw new Error(error.message || putRes.statusText);
+                }
+            } catch (err) {
+                console.error("GitHub Sync Error:", err);
+                notify(`Sync failed: ${err.message}`, "error");
+            }
+        }
 
         const viewport = document.getElementById('viewport');
         const container = document.getElementById('game-container');
@@ -2575,36 +2656,57 @@ log("World Generated!");</pre>
         }
 
         function checkForDams() {
-            // Optimization: Maintain waterIndices or use a pre-filtered list
-            // For now, still scanning, but we will call this less often.
+            // Memory Optimization: Re-use arrays and sets
             let waterIndices = [];
-            for (let i = 0; i < state.tileTypes.length; i++) {
-                if (state.tileTypes[i] === 0 || state.tileTypes[i] === 4) waterIndices.push(i);
+            const size = state.tileTypes.length;
+            for (let i = 0; i < size; i++) {
+                const type = state.tileTypes[i];
+                if (type === 0 || type === 4) {
+                    waterIndices.push(i);
+                }
                 state.tileFlags[i] &= ~32;
             }
             
-            let checked = new Set();
-            let newDams = new Set();
+            if (waterIndices.length === 0) return;
+
+            const checked = new Uint8Array(size);
+            const newDams = new Set();
             let clustersFound = 0;
 
             for (let idx of waterIndices) {
-                if (checked.has(idx)) continue;
-                let queue = [idx], isEnclosed = true, head = 0, cluster = [];
+                if (checked[idx]) continue;
+                
+                let queue = [idx];
+                let isEnclosed = true;
+                let head = 0;
+                let cluster = [];
                 let potentialOwners = new Set();
-                checked.add(idx);
+                checked[idx] = 1;
                 
                 while (head < queue.length) {
                     let curr = queue[head++];
                     cluster.push(curr);
                     let cx = curr % CONFIG.COLS, cy = Math.floor(curr / CONFIG.COLS);
-                    const neighbors = [{x: cx-1, y: cy}, {x: cx+1, y: cy}, {x: cx, y: cy-1}, {x: cx, y: cy+1}];
+                    
+                    const neighbors = [
+                        {x: cx-1, y: cy}, {x: cx+1, y: cy}, {x: cx, y: cy-1}, {x: cx, y: cy+1}
+                    ];
+
                     for (let n of neighbors) {
-                        if (n.x < 0 || n.x >= CONFIG.COLS || n.y < 0 || n.y >= CONFIG.ROWS) { isEnclosed = false; continue; }
+                        if (n.x < 0 || n.x >= CONFIG.COLS || n.y < 0 || n.y >= CONFIG.ROWS) { 
+                            isEnclosed = false; 
+                            continue; 
+                        }
                         let nIdx = n.y * CONFIG.COLS + n.x;
+                        const nType = state.tileTypes[nIdx];
                         const nOwner = state.tileOwners[nIdx];
-                        if (state.tileTypes[nIdx] === 0 || state.tileTypes[nIdx] === 4) {
-                            if (!checked.has(nIdx)) { checked.add(nIdx); queue.push(nIdx); }
-                        } else if (nOwner === 0) { // Unowned land
+
+                        if (nType === 0 || nType === 4) {
+                            if (!checked[nIdx]) { 
+                                checked[nIdx] = 1; 
+                                queue.push(nIdx); 
+                            }
+                        } else if (nOwner === 0) { 
                             isEnclosed = false;
                         } else {
                             potentialOwners.add(nOwner);
@@ -2612,12 +2714,11 @@ log("World Generated!");</pre>
                     }
                 }
                 
-                // Only a dam if fully enclosed by exactly ONE owner
                 if (isEnclosed && potentialOwners.size === 1 && clustersFound < CONFIG.MAX_DAMS) {
                     const ownerIdx = Array.from(potentialOwners)[0];
                     clustersFound++;
-                    state.tileFlags[cluster[0]] |= 32;
-                    cluster.forEach(i => {
+                    state.tileFlags[cluster[0]] |= 32; // Icon marker
+                    for (let i of cluster) {
                         const oldOwner = state.tileOwners[i];
                         if (oldOwner !== ownerIdx) {
                             if (oldOwner > 0) state.entities[oldOwner].ownedCount--;
@@ -2625,35 +2726,34 @@ log("World Generated!");</pre>
                             state.tileOwners[i] = ownerIdx;
                         }
                         newDams.add(i);
-                    });
+                    }
                 }
             }
             
-            // Sync types and redraw only changed tiles
-            state.damIndices.forEach(idx => {
+            // Revert tiles that are no longer dams
+            for (let idx of state.damIndices) {
                 if (!newDams.has(idx)) {
                     const currentOwner = state.tileOwners[idx];
                     if (currentOwner > 0) state.entities[currentOwner].ownedCount--;
-                    state.tileTypes[idx] = 0;
-                    state.tileOwners[idx] = 0; // Revert to unowned water
+                    state.tileTypes[idx] = 0; // Revert to water
+                    state.tileOwners[idx] = 0; 
                     drawTile(idx % CONFIG.COLS, Math.floor(idx / CONFIG.COLS));
                 }
-            });
+            }
             
-            newDams.forEach(idx => {
+            // Mark new dam tiles
+            for (let idx of newDams) {
                 if (!state.damIndices.has(idx)) {
-                    state.tileTypes[idx] = 4;
+                    state.tileTypes[idx] = 4; // Mark as dam
                     drawTile(idx % CONFIG.COLS, Math.floor(idx / CONFIG.COLS));
                 } else {
+                    // Re-draw icon if needed
                     drawTile(idx % CONFIG.COLS, Math.floor(idx / CONFIG.COLS));
                 }
-            });
+            }
             state.damIndices = newDams;
-            
-            // Sync player's global ownedCount
             state.ownedCount = state.entities[1].ownedCount;
             
-            // Update Dam Counts for all entities
             state.entities.forEach(e => e.damCount = 0);
             for(let idx of newDams) {
                 const owner = state.tileOwners[idx];
@@ -4745,7 +4845,76 @@ log("World Generated!");</pre>
         requestAnimationFrame(gameLoop);
         }
 
+        function openEventFeed() {
+            document.getElementById('event-feed-modal').classList.remove('hidden');
+            updateEventFeedUI();
+        }
+
+        function closeEventFeed() {
+            document.getElementById('event-feed-modal').classList.add('hidden');
+        }
+
+        function clearEventFeed() {
+            if (confirm("Are you sure you want to clear all event logs?")) {
+                state.events = [];
+                updateEventFeedUI();
+            }
+        }
+
+        function updateEventFeedUI() {
+            const listEl = document.getElementById('event-list');
+            if (!listEl) return;
+            
+            if (state.events.length === 0) {
+                listEl.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full text-center opacity-50">
+                        <div class="text-4xl mb-4">📜</div>
+                        <p class="text-slate-500 font-bold uppercase text-xs tracking-widest">No operation logs yet</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const colors = {
+                info: 'text-blue-400',
+                success: 'text-emerald-400',
+                error: 'text-red-400',
+                war: 'text-red-500 font-black'
+            };
+
+            listEl.innerHTML = state.events.map(event => {
+                const date = new Date(event.time);
+                const timeStr = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`;
+                
+                return `
+                    <div class="bg-slate-800/50 p-4 rounded-2xl border border-white/5 flex items-center justify-between gap-4 group">
+                        <div class="flex flex-col">
+                            <span class="text-[9px] text-slate-500 font-mono mb-1">${timeStr}</span>
+                            <p class="text-sm ${colors[event.type] || 'text-white'} leading-tight">${event.msg}</p>
+                        </div>
+                        ${(event.x !== null && event.y !== null) ? `
+                            <button onclick="centerCameraOn(${event.x}, ${event.y}); closeEventFeed()" 
+                                    class="bg-blue-600/20 hover:bg-blue-600/40 px-3 py-1.5 rounded-lg border border-blue-500/30 text-[9px] font-black text-blue-400 transition-all active:scale-95 uppercase tracking-widest">
+                                Locate
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
         function notify(msg, type = 'info', x = null, y = null) {
+            // Log to historical events
+            state.events.unshift({
+                time: Date.now(),
+                msg: msg,
+                type: type,
+                x: x,
+                y: y
+            });
+            // Keep only last 100 events
+            if (state.events.length > 100) state.events.pop();
+
             const container = document.getElementById('notifications');
             const toast = document.createElement('div');
             const colors = {
