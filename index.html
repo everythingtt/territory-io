@@ -752,6 +752,87 @@
         </div>
     </div>
 
+    <!-- Sandbox Engine Modal -->
+    <div id="sandbox-engine" class="hidden fixed inset-0 bg-slate-950 z-[1000] flex flex-col">
+        <!-- Engine Header -->
+        <div class="bg-slate-900 border-b border-slate-800 p-4 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <h2 class="text-xl font-black text-amber-500 italic uppercase tracking-tighter">ToryEngine</h2>
+                <div class="h-6 w-[1px] bg-slate-800"></div>
+                <div class="flex gap-2">
+                    <button onclick="setEngineTab('editor')" id="tab-engine-editor" class="px-4 py-1.5 rounded-lg bg-blue-600 text-white text-[10px] font-bold uppercase">Map Editor</button>
+                    <button onclick="setEngineTab('toryscript')" id="tab-engine-script" class="px-4 py-1.5 rounded-lg bg-slate-800 text-slate-400 text-[10px] font-bold uppercase">ToryScript</button>
+                    <button onclick="setEngineTab('explorer')" id="tab-engine-explorer" class="px-4 py-1.5 rounded-lg bg-slate-800 text-slate-400 text-[10px] font-bold uppercase">Explorer</button>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="saveEngineMap()" class="bg-emerald-600 px-4 py-1.5 rounded-lg text-white text-[10px] font-bold uppercase">Save Map</button>
+                <button onclick="closeSandboxEngine()" class="bg-slate-800 px-4 py-1.5 rounded-lg text-slate-400 text-[10px] font-bold uppercase">Exit Engine</button>
+            </div>
+        </div>
+
+        <!-- Engine Content -->
+        <div class="flex-1 flex overflow-hidden">
+            <!-- Map Editor Tab -->
+            <div id="engine-content-editor" class="flex-1 relative bg-slate-900 flex flex-col">
+                <div class="flex-1 relative overflow-hidden" id="engine-viewport">
+                    <canvas id="engine-canvas" class="absolute top-0 left-0"></canvas>
+                </div>
+                <!-- Toolbar -->
+                <div class="bg-slate-900 border-t border-slate-800 p-4 flex gap-4 items-center overflow-x-auto">
+                    <div class="flex flex-col gap-1">
+                        <span class="text-[8px] text-slate-500 font-bold uppercase">Brush Type</span>
+                        <div class="flex gap-2">
+                            <button onclick="setEngineBrush('water')" id="brush-water" class="w-8 h-8 rounded bg-blue-900 border border-blue-500/50"></button>
+                            <button onclick="setEngineBrush('land')" id="brush-land" class="w-8 h-8 rounded bg-slate-800 border border-white/20"></button>
+                            <button onclick="setEngineBrush('city')" id="brush-city" class="w-8 h-8 rounded bg-amber-600 flex items-center justify-center text-xs">🏠</button>
+                            <button onclick="setEngineBrush('capital')" id="brush-capital" class="w-8 h-8 rounded bg-red-600 flex items-center justify-center text-xs">👑</button>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <span class="text-[8px] text-slate-500 font-bold uppercase">Brush Size</span>
+                        <input type="range" id="engine-brush-size" min="1" max="10" value="1" class="w-24">
+                    </div>
+                    <div class="ml-auto text-[10px] text-slate-500 font-mono" id="engine-coords">X: 0, Y: 0</div>
+                </div>
+            </div>
+
+            <!-- ToryScript Tab -->
+            <div id="engine-content-toryscript" class="hidden flex-1 flex bg-slate-950">
+                <div class="w-64 border-r border-slate-800 flex flex-col">
+                    <div class="p-4 border-b border-slate-800 flex justify-between items-center">
+                        <span class="text-[10px] text-slate-500 font-bold uppercase">Files</span>
+                        <button onclick="createNewToryFile()" class="text-blue-500 text-xs">+</button>
+                    </div>
+                    <div id="tory-file-list" class="flex-1 overflow-y-auto p-2 space-y-1">
+                        <!-- List of .tory files -->
+                    </div>
+                </div>
+                <div class="flex-1 flex flex-col">
+                    <div class="p-2 bg-slate-900 border-b border-slate-800 flex gap-2">
+                        <button onclick="runToryScript()" class="bg-blue-600 px-4 py-1 rounded text-[10px] font-bold text-white uppercase">Run Script</button>
+                        <button onclick="saveToryScript()" class="bg-slate-800 px-4 py-1 rounded text-[10px] font-bold text-slate-400 uppercase">Save</button>
+                        <span id="active-tory-filename" class="ml-auto text-[10px] text-slate-500 font-mono self-center">unsaved.tory</span>
+                    </div>
+                    <textarea id="tory-editor" spellcheck="false" class="flex-1 bg-slate-950 text-slate-300 font-mono text-sm p-6 outline-none resize-none" placeholder="// ToryScript - Automate your map creation\n// Example: fill(0, 0, 10, 10, 'water')"></textarea>
+                    <div id="tory-console" class="h-32 bg-black border-t border-slate-800 p-4 font-mono text-[10px] text-emerald-500 overflow-y-auto">
+                        > ToryScript Engine Ready.
+                    </div>
+                </div>
+            </div>
+
+            <!-- File Explorer Tab -->
+            <div id="engine-content-explorer" class="hidden flex-1 bg-slate-900 p-8 overflow-y-auto">
+                <div class="max-w-4xl mx-auto">
+                    <h3 class="text-xl font-bold text-white mb-6 uppercase tracking-widest">Virtual File System</h3>
+                    <div class="grid grid-cols-4 gap-4" id="explorer-grid">
+                        <!-- Files will be listed here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="login-screen" class="fixed inset-0 bg-slate-950 z-[100] flex items-center justify-center p-6">
         <div class="bg-slate-900 p-8 rounded-3xl border border-slate-800 w-full max-w-sm">
             <h1 class="text-3xl font-bold text-center text-blue-500 mb-2 italic">TERRITORY.IO</h1>
@@ -761,6 +842,7 @@
                 <button id="tab-single" onclick="setLoginTab('single')" class="flex-1 py-2 rounded-xl font-bold text-[10px] uppercase tracking-wider transition-all bg-blue-600 text-white shadow-lg">Single</button>
                 <button id="tab-multi" onclick="setLoginTab('multi')" class="flex-1 py-2 rounded-xl font-bold text-[10px] uppercase tracking-wider transition-all bg-slate-800 text-slate-400">Multi</button>
                 <button id="tab-custom" onclick="setLoginTab('custom')" class="flex-1 py-2 rounded-xl font-bold text-[10px] uppercase tracking-wider transition-all bg-slate-800 text-slate-400">Custom</button>
+                <button id="tab-sandbox" onclick="setLoginTab('sandbox')" class="flex-1 py-2 rounded-xl font-bold text-[10px] uppercase tracking-wider transition-all bg-slate-800 text-slate-400">Sandbox</button>
             </div>
 
             <div id="single-panel">
@@ -841,6 +923,21 @@
                     </div>
                     <p class="text-[9px] text-center text-slate-500 uppercase font-bold">Upload an image to use as territory pattern</p>
                     <button onclick="setLoginTab('single')" class="w-full bg-slate-700 py-3 rounded-xl font-bold text-white text-[10px] uppercase tracking-wider">Back to Start</button>
+                </div>
+            </div>
+
+            <div id="sandbox-panel" class="hidden">
+                <div class="space-y-4">
+                    <button onclick="openSandboxEngine()" class="w-full bg-amber-600 py-4 rounded-xl font-bold text-white shadow-lg active:scale-95 transition-transform uppercase text-xs">
+                        Open Map Engine
+                    </button>
+                    <div class="relative">
+                        <input type="file" id="map-upload" accept=".json" class="hidden" onchange="loadCustomMap(this)">
+                        <button onclick="document.getElementById('map-upload').click()" class="w-full bg-slate-800 border border-slate-700 py-4 rounded-xl font-bold text-slate-300 shadow-lg active:scale-95 transition-transform uppercase text-xs">
+                            Upload & Play Map
+                        </button>
+                    </div>
+                    <p class="text-[9px] text-center text-slate-500 uppercase font-bold">Create maps in the engine or play custom ones</p>
                 </div>
             </div>
         </div>
@@ -1014,7 +1111,7 @@
         };
 
         const state = {
-            version: '2.3.2', // Current version tag (Performance Optimizations)
+            version: '2.4.0', // Current version tag (Sandbox Mode & ToryScript)
             username: '',
             playerId: 'pr' + Math.floor(Math.random() * 90 + 10), // Unique 2-digit ID
             initialized: false, // Prevent multiple initializations
@@ -1090,7 +1187,355 @@
             lastFrameTime: performance.now(),
             frameCount: 0,
             fps: 0,
-            lastFpsUpdate: performance.now()
+            lastFpsUpdate: performance.now(),
+            
+            // --- Sandbox Engine State ---
+            engine: {
+                initialized: false,
+                activeTab: 'editor',
+                brush: 'water',
+                brushSize: 1,
+                mapData: {
+                    tileTypes: null,
+                    cityIndices: [],
+                    capitalIdx: null
+                },
+                files: [
+                    { name: 'example.tory', content: '// Example ToryScript\nfill(10, 10, 50, 50, "water");\nspawnCity(20, 20);\nspawnCapital(100, 100);', type: 'script' }
+                ],
+                activeFile: null
+            else if (mode === 'sandbox') {
+                document.getElementById('tab-sandbox').className = 'flex-1 py-2 rounded-xl font-bold text-[10px] uppercase tracking-wider transition-all bg-amber-600 text-white shadow-lg';
+                document.getElementById('sandbox-panel').classList.remove('hidden');
+            }
+        }
+
+        // --- Sandbox Engine Logic ---
+        function openSandboxEngine() {
+            const engineModal = document.getElementById('sandbox-engine');
+            engineModal.classList.remove('hidden');
+            
+            if (!state.engine.initialized) {
+                initSandboxEngine();
+            }
+            
+            updateEngineExplorer();
+            updateToryFileList();
+        }
+
+        function closeSandboxEngine() {
+            document.getElementById('sandbox-engine').classList.add('hidden');
+        }
+
+        function initSandboxEngine() {
+            const eCanvas = document.getElementById('engine-canvas');
+            eCanvas.width = 3840;
+            eCanvas.height = 2160;
+            const eCtx = eCanvas.getContext('2d', { alpha: false });
+            
+            state.engine.ctx = eCtx;
+            state.engine.mapData.tileTypes = new Uint8Array(CONFIG.COLS * CONFIG.ROWS).fill(1); // Default to land
+            
+            // Initial render
+            drawEngineMap();
+            
+            // Interaction
+            const handleEngineMove = (e) => {
+                if (!state.engine.isInteracting) return;
+                const rect = eCanvas.getBoundingClientRect();
+                const scaleX = eCanvas.width / rect.width;
+                const scaleY = eCanvas.height / rect.height;
+                const x = Math.floor((e.clientX - rect.left) * scaleX / CONFIG.TILE_SIZE);
+                const y = Math.floor((e.clientY - rect.top) * scaleY / CONFIG.TILE_SIZE);
+                
+                if (x >= 0 && x < CONFIG.COLS && y >= 0 && y < CONFIG.ROWS) {
+                    applyEngineBrush(x, y);
+                    document.getElementById('engine-coords').innerText = `X: ${x}, Y: ${y}`;
+                }
+            };
+
+            eCanvas.addEventListener('mousedown', (e) => { state.engine.isInteracting = true; handleEngineMove(e); });
+            window.addEventListener('mousemove', handleEngineMove);
+            window.addEventListener('mouseup', () => state.engine.isInteracting = false);
+            
+            state.engine.initialized = true;
+        }
+
+        function drawEngineMap() {
+            const eCtx = state.engine.ctx;
+            const data = state.engine.mapData.tileTypes;
+            
+            for (let y = 0; y < CONFIG.ROWS; y++) {
+                for (let x = 0; x < CONFIG.COLS; x++) {
+                    const type = data[y * CONFIG.COLS + x];
+                    let fill = COLORS.LAND;
+                    if (type === 0) fill = COLORS.WATER;
+                    else if (type === 5) fill = COLORS.CITY;
+                    else if (type === 6) fill = COLORS.CAPITAL;
+                    
+                    eCtx.fillStyle = fill;
+                    eCtx.fillRect(x * CONFIG.TILE_SIZE, y * CONFIG.TILE_SIZE, CONFIG.TILE_SIZE, CONFIG.TILE_SIZE);
+                    
+                    // Draw icons
+                    if (type === 5) { eCtx.fillStyle = 'white'; eCtx.font = '8px Arial'; eCtx.textAlign = 'center'; eCtx.fillText('🏠', (x+0.5)*CONFIG.TILE_SIZE, (y+0.5)*CONFIG.TILE_SIZE); }
+                    if (type === 6) { eCtx.fillStyle = 'white'; eCtx.font = '9px Arial'; eCtx.textAlign = 'center'; eCtx.fillText('👑', (x+0.5)*CONFIG.TILE_SIZE, (y+0.5)*CONFIG.TILE_SIZE); }
+                }
+            }
+        }
+
+        function setEngineBrush(type) {
+            state.engine.brush = type;
+            ['water', 'land', 'city', 'capital'].forEach(b => {
+                document.getElementById(`brush-${b}`).style.borderColor = b === type ? '#3b82f6' : 'rgba(255,255,255,0.2)';
+            });
+        }
+
+        function applyEngineBrush(x, y) {
+            const size = parseInt(document.getElementById('engine-brush-size').value);
+            const typeMap = { 'water': 0, 'land': 1, 'city': 5, 'capital': 6 };
+            const type = typeMap[state.engine.brush];
+            
+            for (let i = -size + 1; i < size; i++) {
+                for (let j = -size + 1; j < size; j++) {
+                    const tx = x + i, ty = y + j;
+                    if (tx >= 0 && tx < CONFIG.COLS && ty >= 0 && ty < CONFIG.ROWS) {
+                        const idx = ty * CONFIG.COLS + tx;
+                        state.engine.mapData.tileTypes[idx] = type;
+                        
+                        // Special handling for capital (only one)
+                        if (type === 6) {
+                            if (state.engine.mapData.capitalIdx !== null) {
+                                state.engine.mapData.tileTypes[state.engine.mapData.capitalIdx] = 1;
+                                drawEngineTile(state.engine.mapData.capitalIdx % CONFIG.COLS, Math.floor(state.engine.mapData.capitalIdx / CONFIG.COLS));
+                            }
+                            state.engine.mapData.capitalIdx = idx;
+                        }
+                        
+                        drawEngineTile(tx, ty);
+                    }
+                }
+            }
+        }
+
+        function drawEngineTile(x, y) {
+            const eCtx = state.engine.ctx;
+            const type = state.engine.mapData.tileTypes[y * CONFIG.COLS + x];
+            let fill = COLORS.LAND;
+            if (type === 0) fill = COLORS.WATER;
+            else if (type === 5) fill = COLORS.CITY;
+            else if (type === 6) fill = COLORS.CAPITAL;
+            
+            eCtx.fillStyle = fill;
+            eCtx.fillRect(x * CONFIG.TILE_SIZE, y * CONFIG.TILE_SIZE, CONFIG.TILE_SIZE, CONFIG.TILE_SIZE);
+            if (type === 5) { eCtx.fillStyle = 'white'; eCtx.font = '8px Arial'; eCtx.textAlign = 'center'; eCtx.fillText('🏠', (x+0.5)*CONFIG.TILE_SIZE, (y+0.5)*CONFIG.TILE_SIZE); }
+            if (type === 6) { eCtx.fillStyle = 'white'; eCtx.font = '9px Arial'; eCtx.textAlign = 'center'; eCtx.fillText('👑', (x+0.5)*CONFIG.TILE_SIZE, (y+0.5)*CONFIG.TILE_SIZE); }
+        }
+
+        function setEngineTab(tab) {
+            state.engine.activeTab = tab;
+            ['editor', 'script', 'explorer'].forEach(t => {
+                const btn = document.getElementById(`tab-engine-${t}`);
+                const panel = document.getElementById(`engine-content-${t === 'script' ? 'toryscript' : t}`);
+                btn.className = t === tab ? 'px-4 py-1.5 rounded-lg bg-blue-600 text-white text-[10px] font-bold uppercase' : 'px-4 py-1.5 rounded-lg bg-slate-800 text-slate-400 text-[10px] font-bold uppercase';
+                panel.classList.toggle('hidden', t !== tab);
+            });
+            if (tab === 'explorer') updateEngineExplorer();
+        }
+
+        // ToryScript Engine
+        function runToryScript() {
+            const code = document.getElementById('tory-editor').value;
+            const consoleEl = document.getElementById('tory-console');
+            consoleEl.innerHTML += `<br>> Running script...`;
+            
+            try {
+                // ToryScript Interpreter (Sandboxed eval-like logic)
+                const api = {
+                    fill: (x, y, w, h, type) => {
+                        const t = type === 'water' ? 0 : 1;
+                        for (let i = y; i < y + h; i++) {
+                            for (let j = x; j < x + w; j++) {
+                                if (j >= 0 && j < CONFIG.COLS && i >= 0 && i < CONFIG.ROWS) {
+                                    state.engine.mapData.tileTypes[i * CONFIG.COLS + j] = t;
+                                }
+                            }
+                        }
+                    },
+                    spawnCity: (x, y) => {
+                        if (x >= 0 && x < CONFIG.COLS && y >= 0 && y < CONFIG.ROWS) {
+                            state.engine.mapData.tileTypes[y * CONFIG.COLS + x] = 5;
+                        }
+                    },
+                    spawnCapital: (x, y) => {
+                        if (x >= 0 && x < CONFIG.COLS && y >= 0 && y < CONFIG.ROWS) {
+                            const idx = y * CONFIG.COLS + x;
+                            if (state.engine.mapData.capitalIdx !== null) {
+                                state.engine.mapData.tileTypes[state.engine.mapData.capitalIdx] = 1;
+                            }
+                            state.engine.mapData.tileTypes[idx] = 6;
+                            state.engine.mapData.capitalIdx = idx;
+                        }
+                    },
+                    clear: () => state.engine.mapData.tileTypes.fill(1),
+                    log: (msg) => { consoleEl.innerHTML += `<br>> ${msg}`; }
+                };
+
+                // Create function from code
+                const scriptFunc = new Function(...Object.keys(api), code);
+                scriptFunc(...Object.values(api));
+                
+                drawEngineMap();
+                consoleEl.innerHTML += `<br>> Script executed successfully.`;
+                consoleEl.scrollTop = consoleEl.scrollHeight;
+            } catch (e) {
+                consoleEl.innerHTML += `<br><span class="text-red-500">> Error: ${e.message}</span>`;
+            }
+        }
+
+        function createNewToryFile() {
+            const name = prompt("Enter filename (e.g. custom.tory):", "new_script.tory");
+            if (!name) return;
+            state.engine.files.push({ name: name.endsWith('.tory') ? name : name + '.tory', content: '', type: 'script' });
+            updateToryFileList();
+            updateEngineExplorer();
+        }
+
+        function updateToryFileList() {
+            const list = document.getElementById('tory-file-list');
+            list.innerHTML = '';
+            state.engine.files.filter(f => f.name.endsWith('.tory')).forEach(f => {
+                const div = document.createElement('div');
+                div.className = `p-2 rounded text-[10px] font-mono cursor-pointer transition-colors ${state.engine.activeFile === f.name ? 'bg-blue-600/20 text-blue-400' : 'text-slate-500 hover:bg-slate-800'}`;
+                div.innerText = f.name;
+                div.onclick = () => loadToryFile(f.name);
+                list.appendChild(div);
+            });
+        }
+
+        function loadToryFile(name) {
+            const file = state.engine.files.find(f => f.name === name);
+            if (!file) return;
+            state.engine.activeFile = name;
+            document.getElementById('tory-editor').value = file.content;
+            document.getElementById('active-tory-filename').innerText = name;
+            updateToryFileList();
+        }
+
+        function saveToryScript() {
+            if (!state.engine.activeFile) {
+                createNewToryFile();
+                if (!state.engine.activeFile) return;
+            }
+            const file = state.engine.files.find(f => f.name === state.engine.activeFile);
+            file.content = document.getElementById('tory-editor').value;
+            notify(`Saved ${file.name}`, 'success');
+            updateEngineExplorer();
+        }
+
+        function saveEngineMap() {
+            const name = prompt("Enter map name:", "custom_map");
+            if (!name) return;
+            
+            const cityIndices = [];
+            let capitalIdx = null;
+            state.engine.mapData.tileTypes.forEach((t, i) => {
+                if (t === 5) cityIndices.push(i);
+                if (t === 6) capitalIdx = i;
+            });
+
+            const mapData = {
+                name: name,
+                version: state.version,
+                tileTypes: Array.from(state.engine.mapData.tileTypes),
+                cityIndices: cityIndices,
+                capitalIdx: capitalIdx
+            };
+
+            const blob = new Blob([JSON.stringify(mapData)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${name}.json`;
+            a.click();
+            
+            // Add to virtual explorer
+            state.engine.files.push({ name: `${name}.json`, content: JSON.stringify(mapData), type: 'map' });
+            notify("Map saved and downloaded!", "success");
+        }
+
+        function updateEngineExplorer() {
+            const grid = document.getElementById('explorer-grid');
+            grid.innerHTML = '';
+            state.engine.files.forEach(f => {
+                const div = document.createElement('div');
+                div.className = 'bg-slate-800/50 p-4 rounded-xl border border-white/5 flex flex-col items-center gap-3 hover:bg-slate-800 transition-colors cursor-pointer group';
+                const isMap = f.name.endsWith('.json');
+                div.innerHTML = `
+                    <div class="text-3xl">${isMap ? '🗺️' : '📜'}</div>
+                    <span class="text-[10px] font-bold text-white truncate w-full text-center">${f.name}</span>
+                    <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button class="text-[8px] text-blue-400 font-bold uppercase" onclick="event.stopPropagation(); ${isMap ? `playCustomMap('${f.name}')` : `loadToryFile('${f.name}'); setEngineTab('toryscript')`}">Open</button>
+                        <button class="text-[8px] text-red-400 font-bold uppercase" onclick="event.stopPropagation(); deleteVirtualFile('${f.name}')">Del</button>
+                    </div>
+                `;
+                grid.appendChild(div);
+            });
+        }
+
+        function deleteVirtualFile(name) {
+            state.engine.files = state.engine.files.filter(f => f.name !== name);
+            if (state.engine.activeFile === name) state.engine.activeFile = null;
+            updateEngineExplorer();
+            updateToryFileList();
+        }
+
+        function loadCustomMap(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    applyMapDataToGame(data);
+                } catch (err) {
+                    alert("Invalid map file!");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function playCustomMap(filename) {
+            const file = state.engine.files.find(f => f.name === filename);
+            if (!file) return;
+            applyMapDataToGame(JSON.parse(f.content));
+        }
+
+        function applyMapDataToGame(data) {
+            if (state.initialized) {
+                if (!confirm("Start new game with this map? Current progress will be lost.")) return;
+                location.reload(); // Simple way to reset for now
+            }
+            
+            state.customMapData = data;
+            startGame('single'); // Start as single player but with custom data
+            
+            // Overwrite generated world with custom data
+            state.tileTypes.set(data.tileTypes);
+            state.cityIndices = new Set(data.cityIndices);
+            data.cityIndices.forEach(idx => {
+                state.tileTypes[idx] = 5;
+                state.cityPopulations[idx] = 1000;
+            });
+            
+            if (data.capitalIdx !== null) {
+                const tx = data.capitalIdx % CONFIG.COLS, ty = Math.floor(data.capitalIdx / CONFIG.COLS);
+                // We'll let spawnEntities handle the actual entity placement for now
+                // but we could force the player to the custom capital location.
+            }
+            
+            drawRegion(0, 0, CONFIG.COLS-1, CONFIG.ROWS-1);
+            closeSandboxEngine();
+            notify(`Loaded map: ${data.name}`, 'success');
         };
 
         const viewport = document.getElementById('viewport');
