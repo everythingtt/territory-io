@@ -9,6 +9,17 @@
     <link rel="apple-touch-icon" href="assets/rocket.gif">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        .tory-ui-element {
+            pointer-events: auto;
+            user-select: none;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .tory-ui-element:hover {
+            filter: brightness(1.1);
+        }
+        .tory-ui-element:active {
+            transform: scale(0.98);
+        }
         body {
             background-color: #020617;
             color: #f8fafc;
@@ -1126,11 +1137,11 @@ tory setupMap() {      // Function definition
                                     <span class="text-[10px] text-slate-500 uppercase">Inject DOM ('map'|'hud')</span>
                                 </div>
                                 <div class="bg-black/30 p-4 rounded-xl border border-white/5 text-center">
-                                    <code class="text-cyan-400 block mb-1">css(id, style)</code>
+                                    <code class="text-cyan-400 block mb-1">css(selector, style)</code>
                                     <span class="text-[10px] text-slate-500 uppercase">Apply Styling</span>
                                 </div>
                                 <div class="bg-black/30 p-4 rounded-xl border border-white/5 text-center">
-                                    <code class="text-cyan-400 block mb-1">removeUI(id)</code>
+                                    <code class="text-cyan-400 block mb-1">removeUI(selector)</code>
                                     <span class="text-[10px] text-slate-500 uppercase">Delete Element</span>
                                 </div>
                                 <div class="bg-black/30 p-4 rounded-xl border border-white/5 text-center">
@@ -1138,7 +1149,7 @@ tory setupMap() {      // Function definition
                                     <span class="text-[10px] text-slate-500 uppercase">Wipe UI Layer</span>
                                 </div>
                                 <div class="bg-black/30 p-4 rounded-xl border border-white/5 text-center">
-                                    <code class="text-cyan-400 block mb-1">event(id, type, fn)</code>
+                                    <code class="text-cyan-400 block mb-1">event(selector, type, fn)</code>
                                     <span class="text-[10px] text-slate-500 uppercase">Interaction</span>
                                 </div>
                                 <div class="bg-black/30 p-4 rounded-xl border border-white/5 text-center">
@@ -2788,6 +2799,20 @@ toggleExplorer();` },
                     return ent ? { idx: state.entities.indexOf(ent), name: ent.name, type: ent.type } : null;
                 },
                 // --- Robust UI/UX API ---
+                _resolveEl: (selector) => {
+                    if (typeof selector !== 'string') return null;
+                    // Handle both ID strings and CSS selectors
+                    let el = document.getElementById(selector.startsWith('#') ? selector.slice(1) : selector);
+                    if (!el) el = document.querySelector(selector);
+                    return el;
+                },
+                _isToryEl: (el) => {
+                    if (!el) return false;
+                    return el.classList.contains('tory-ui-element') || 
+                           el.id.startsWith('tory-') || 
+                           el.id.startsWith('btn-') || // Allow game buttons
+                           el.closest('#sandbox-engine') !== null; // Allow anything inside engine
+                },
                 createUI: (html, layer = 'map') => {
                     const layerEl = document.getElementById(layer === 'hud' ? 'tory-hud-layer' : 'tory-ui-layer');
                     if (!layerEl) return null;
@@ -2824,7 +2849,7 @@ toggleExplorer();` },
                     return ToryScript.api(scriptId, customLog).createImage(url, styles, layer);
                 },
                 removeUI: (id) => {
-                    const el = document.getElementById(id);
+                    const el = ToryScript.api(scriptId, customLog)._resolveEl(id);
                     if (el && el.classList.contains('tory-ui-element')) {
                         el.remove();
                         return true;
@@ -2848,26 +2873,26 @@ toggleExplorer();` },
                         handle: a
                     };
                 },
-                applyStyle: (id, css) => {
-                    const el = document.getElementById(id);
-                    if (el && (el.classList.contains('tory-ui-element') || el.id.startsWith('tory-'))) {
+                applyStyle: (selector, css) => {
+                    const el = ToryScript.api(scriptId, customLog)._resolveEl(selector);
+                    if (el && ToryScript.api(scriptId, customLog)._isToryEl(el)) {
                         el.style.cssText += css;
                     } else {
-                        console.warn(`[ToryScript] applyStyle blocked for element ID: ${id}. Only Tory-created elements can be styled.`);
+                        console.warn(`[ToryScript] applyStyle blocked or element not found for: ${selector}.`);
                     }
                 },
-                addEvent: (id, type, toryFunc) => {
-                    const el = document.getElementById(id);
-                    if (el && (el.classList.contains('tory-ui-element') || el.id.startsWith('tory-'))) {
+                addEvent: (selector, type, toryFunc) => {
+                    const el = ToryScript.api(scriptId, customLog)._resolveEl(selector);
+                    if (el && ToryScript.api(scriptId, customLog)._isToryEl(el)) {
                         el.addEventListener(type, (e) => {
                             try {
                                 if (typeof toryFunc === 'function') toryFunc(e);
                             } catch (err) {
-                                console.error(`[ToryScript] Event listener error [${id}:${type}]:`, err);
+                                console.error(`[ToryScript] Event listener error [${selector}:${type}]:`, err);
                             }
                         });
                     } else {
-                        console.warn(`[ToryScript] addEvent blocked for element ID: ${id}. Only Tory-created elements can have custom events.`);
+                        console.warn(`[ToryScript] addEvent blocked or element not found for: ${selector}.`);
                     }
                 },
                 random: (min, max) => Math.floor(Math.random() * (max - min + 1)) + min,
