@@ -1105,8 +1105,21 @@ tory setupMap() {      // Function definition
                             <span class="w-8 h-8 bg-cyan-500/20 rounded-lg flex items-center justify-center text-sm">05</span>
                             UI/UX Construction
                         </h3>
-                        <div class="bg-slate-800/30 p-8 rounded-3xl border border-white/5 space-y-6">
-                            <p class="text-slate-400 text-sm leading-relaxed">Build custom interfaces directly inside the game container. All elements are added to the persistent UI layer.</p>
+                        <div class="bg-slate-800/30 p-8 rounded-3xl border border-white/5 space-y-8">
+                            <div class="space-y-4">
+                                <p class="text-slate-400 text-sm leading-relaxed">Build custom interfaces directly inside the game container. ToryScript provides two distinct rendering layers for your UI elements:</p>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="bg-black/40 p-4 rounded-2xl border border-blue-500/10">
+                                        <div class="text-blue-400 font-black text-[10px] uppercase mb-1">Map Layer ('map')</div>
+                                        <p class="text-slate-500 text-[10px]">Elements scale and pan with the map. Best for territory markers or terrain labels.</p>
+                                    </div>
+                                    <div class="bg-black/40 p-4 rounded-2xl border border-emerald-500/10">
+                                        <div class="text-emerald-400 font-black text-[10px] uppercase mb-1">HUD Layer ('hud')</div>
+                                        <p class="text-slate-500 text-[10px]">Fixed-position elements that don't zoom. Ideal for menus, buttons, and custom status bars.</p>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div class="bg-black/30 p-4 rounded-xl border border-white/5 text-center">
                                     <code class="text-cyan-400 block mb-1">html(str, [layer])</code>
@@ -1132,13 +1145,15 @@ tory setupMap() {      // Function definition
                                     <code class="text-cyan-400 block mb-1">image(url, style, [layer])</code>
                                     <span class="text-[10px] text-slate-500 uppercase">Static Media</span>
                                 </div>
-                                <div class="bg-black/30 p-4 rounded-xl border border-white/5 text-center">
-                                    <code class="text-cyan-400 block mb-1">gif(url, style, [layer])</code>
-                                    <span class="text-[10px] text-slate-500 uppercase">Animated GIF</span>
-                                </div>
-                                <div class="bg-black/30 p-4 rounded-xl border border-white/5 text-center">
-                                    <code class="text-cyan-400 block mb-1">audio(url, opts)</code>
-                                    <span class="text-[10px] text-slate-500 uppercase">MP3/Sound FX</span>
+                            </div>
+
+                            <div class="bg-blue-500/5 p-4 rounded-2xl border border-blue-500/20">
+                                <div class="flex gap-3">
+                                    <span class="text-blue-400 text-sm">🛡️</span>
+                                    <div>
+                                        <div class="text-blue-400 font-black text-[10px] uppercase mb-1">Safety & Garbage Collection</div>
+                                        <p class="text-slate-500 text-[10px] leading-relaxed">To prevent memory leaks and crashes, all injected UI elements are automatically purged when their parent script is stopped. Only elements created via ToryScript can be styled or modified using <code class="text-slate-400">css()</code> or <code class="text-slate-400">event()</code>.</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
