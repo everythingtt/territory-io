@@ -896,6 +896,7 @@
                     <button type="button" onclick="setEngineTab('docs')" id="tab-engine-docs" class="px-4 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-400 text-[10px] font-bold uppercase tracking-wide" title="Documentation">Docs</button>
                     <button type="button" onclick="setEngineTab('explorer')" id="tab-engine-explorer" class="px-4 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-400 text-[10px] font-bold uppercase tracking-wide" title="Asset Explorer">Assets</button>
                     <button type="button" onclick="setEngineTab('templates')" id="tab-engine-templates" class="px-4 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-400 text-[10px] font-bold uppercase tracking-wide" title="Map Templates">Templates</button>
+                    <button type="button" onclick="setEngineTab('gameguide')" id="tab-engine-gameguide" class="px-4 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-400 text-[10px] font-bold uppercase tracking-wide" title="How to Play">Guide</button>
                     <button type="button" onclick="setEngineTab('download')" id="tab-engine-download" class="px-4 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-400 text-[10px] font-bold uppercase tracking-wide" title="Download App">Download</button>
                 </div>
             </div>
@@ -1311,6 +1312,88 @@ cycle(tory() {
                             </div>
                         </div>
                     </section>
+                </div>
+            </div>
+
+            <!-- Game Documentation & Guide Tab -->
+            <div id="engine-content-gameguide" class="hidden flex-1 bg-slate-900 p-10 overflow-y-auto custom-scrollbar">
+                <div class="max-w-4xl mx-auto space-y-16">
+                    <!-- Hero Section -->
+                    <div class="text-center space-y-6 border-b border-white/5 pb-12">
+                        <h2 class="text-6xl font-black text-white italic uppercase tracking-tighter">Territory.io <span class="text-blue-500">Manual</span></h2>
+                        <p class="text-slate-400 text-xl max-w-2xl mx-auto leading-relaxed">Master the art of expansion, economy, and global dominance in this deep-strategy grid simulation.</p>
+                    </div>
+
+                    <!-- How the Game Works -->
+                    <section class="space-y-8">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 bg-blue-600/20 rounded-2xl flex items-center justify-center text-2xl">⚙️</div>
+                            <h3 class="text-3xl font-black text-white uppercase italic tracking-tighter">Core Mechanics</h3>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="bg-slate-800/30 p-8 rounded-[32px] border border-white/5 space-y-4">
+                                <h4 class="text-blue-400 font-bold uppercase tracking-widest text-xs">The Grid System</h4>
+                                <p class="text-slate-400 text-sm leading-relaxed">The world is a high-resolution 384x216 grid. Every pixel is a tile that can be claimed, developed, or destroyed. The game engine uses optimized binary buffers to handle over 80,000 tiles in real-time.</p>
+                            </div>
+                            <div class="bg-slate-800/30 p-8 rounded-[32px] border border-white/5 space-y-4">
+                                <h4 class="text-emerald-400 font-bold uppercase tracking-widest text-xs">Economy & Income</h4>
+                                <p class="text-slate-400 text-sm leading-relaxed">Your wealth is generated every <b>second (Tick)</b>. Income scales with your territory size, city bonuses, and research levels. A large <b>Cycle (10s)</b> triggers major economic events and bot logic updates.</p>
+                            </div>
+                            <div class="bg-slate-800/30 p-8 rounded-[32px] border border-white/5 space-y-4">
+                                <h4 class="text-amber-400 font-bold uppercase tracking-widest text-xs">Expansion Cost</h4>
+                                <p class="text-slate-400 text-sm leading-relaxed">Claiming tiles isn't free. Each successful claim increases your base tile cost by <b>$0.25</b>. Crossing water (Bridges) costs <b>5x</b> more than land. Strategy lies in efficient growth.</p>
+                            </div>
+                            <div class="bg-slate-800/30 p-8 rounded-[32px] border border-white/5 space-y-4">
+                                <h4 class="text-purple-400 font-bold uppercase tracking-widest text-xs">Diplomacy & War</h4>
+                                <p class="text-slate-400 text-sm leading-relaxed">Declare wars to seize land. Wars require a <b>Justification</b> period (cycles). During war, expansion is cheaper but you suffer a balance penalty. Alliances allow for shared vision and protection.</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Playing Guide -->
+                    <section class="space-y-8">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 bg-amber-600/20 rounded-2xl flex items-center justify-center text-2xl">🎮</div>
+                            <h3 class="text-3xl font-black text-white uppercase italic tracking-tighter">Architect's Guide</h3>
+                        </div>
+                        <div class="space-y-6">
+                            <!-- Step 1 -->
+                            <div class="bg-gradient-to-r from-blue-600/10 to-transparent p-8 rounded-[32px] border border-blue-500/20 flex gap-6">
+                                <div class="text-4xl font-black text-blue-500/30 italic">01</div>
+                                <div class="space-y-2">
+                                    <h4 class="text-white font-bold text-lg uppercase italic">Establish a Capital</h4>
+                                    <p class="text-slate-400 text-sm">Choose your spawn point wisely. Your capital is your economic heart, providing a massive <b>+$5</b> income bonus. If it falls, your empire is paralyzed.</p>
+                                </div>
+                            </div>
+                            <!-- Step 2 -->
+                            <div class="bg-gradient-to-r from-emerald-600/10 to-transparent p-8 rounded-[32px] border border-emerald-500/20 flex gap-6">
+                                <div class="text-4xl font-black text-emerald-500/30 italic">02</div>
+                                <div class="space-y-2">
+                                    <h4 class="text-white font-bold text-lg uppercase italic">Found & Develop Cities</h4>
+                                    <p class="text-slate-400 text-sm">Cities increase your <b>Max Balance</b> and income. Develop them using the <b>City Donut Menu</b> (click a city) to reach higher levels (hj1 to hj8) for exponential growth.</p>
+                                </div>
+                            </div>
+                            <!-- Step 3 -->
+                            <div class="bg-gradient-to-r from-purple-600/10 to-transparent p-8 rounded-[32px] border border-purple-500/20 flex gap-6">
+                                <div class="text-4xl font-black text-purple-500/30 italic">03</div>
+                                <div class="space-y-2">
+                                    <h4 class="text-white font-bold text-lg uppercase italic">Research & Modernize</h4>
+                                    <p class="text-slate-400 text-sm">Spend Research Tokens to unlock military tech (Missiles, Warplanes) or economic buffs. Higher tech allows for <b>Air Support</b> captures and cheaper rebuilding.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Pro Tips -->
+                    <div class="bg-slate-800/20 p-10 rounded-[40px] border border-white/5">
+                        <h4 class="text-white font-black uppercase text-xs tracking-[0.3em] mb-6 text-center">Architect Pro-Tips</h4>
+                        <ul class="grid grid-cols-1 md:grid-cols-2 gap-4 text-[11px] text-slate-500 uppercase font-bold">
+                            <li class="flex items-center gap-3"><span class="text-blue-500">●</span> Use Dams to enclose water for huge bonuses.</li>
+                            <li class="flex items-center gap-3"><span class="text-blue-500">●</span> Watch for 'Insane' bots; they expand every tick.</li>
+                            <li class="flex items-center gap-3"><span class="text-blue-500">●</span> Keep balance below Max to avoid overpop penalties.</li>
+                            <li class="flex items-center gap-3"><span class="text-blue-500">●</span> Use ToryScript to automate complex map setups.</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
 
@@ -2123,7 +2206,7 @@ toggleExplorer();` },
 
         function setEngineTab(tab) {
             state.engine.activeTab = tab;
-            ['editor', 'toryscript', 'docs', 'explorer', 'templates', 'download'].forEach(t => {
+            ['editor', 'toryscript', 'docs', 'explorer', 'templates', 'gameguide', 'download'].forEach(t => {
                 const btn = document.getElementById(`tab-engine-${t}`);
                 const panel = document.getElementById(`engine-content-${t}`);
                 if (btn) btn.className = t === tab
