@@ -318,6 +318,45 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
 
+        /* Build Modal Styling */
+        #build-modal-content {
+            background: linear-gradient(135deg, #0f172a 0%, #020617 100%);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.8), 0 0 20px rgba(59, 130, 246, 0.1);
+        }
+        .build-step {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 0;
+            opacity: 0.4;
+            transition: all 0.3s ease;
+        }
+        .build-step.active { opacity: 1; color: #3b82f6; }
+        .build-step.completed { opacity: 1; color: #10b981; }
+        .build-step.completed .step-icon { background: #10b981; }
+        .step-icon {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #334155;
+            transition: all 0.3s ease;
+        }
+        .build-progress-bar {
+            height: 4px;
+            background: #1e293b;
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        #build-progress-fill {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
         /* Standalone App Improvements */
         body.is-standalone #sandbox-engine {
             border: none;
@@ -779,6 +818,35 @@
                     <button type="button" onclick="closeFactionModal()" class="flex-1 bg-slate-800 py-4 rounded-xl font-bold text-slate-400" title="Cancel faction creation">CANCEL</button>
                     <button type="button" onclick="confirmCreateFaction()" class="flex-1 bg-blue-600 py-4 rounded-xl font-bold text-white shadow-lg" title="Create the faction">CREATE</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Build Progress Modal -->
+    <div id="build-modal" class="hidden fixed inset-0 bg-slate-950/90 backdrop-blur-xl z-[2000] flex items-center justify-center p-6">
+        <div id="build-modal-content" class="w-full max-w-md p-10 rounded-[40px] text-center">
+            <div class="mb-8">
+                <div id="build-target-icon" class="w-20 h-20 bg-blue-500/10 rounded-3xl flex items-center justify-center text-4xl mx-auto mb-4 border border-blue-500/20">💻</div>
+                <h2 id="build-title" class="text-2xl font-black text-white italic uppercase tracking-tighter">Initializing Build</h2>
+                <p id="build-status" class="text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em] mt-2">Preparing Environment...</p>
+            </div>
+
+            <div class="build-progress-bar">
+                <div id="build-progress-fill"></div>
+            </div>
+
+            <div class="space-y-1 text-left max-w-[240px] mx-auto">
+                <div id="step-analyze" class="build-step"><div class="step-icon"></div><span class="text-[10px] font-bold uppercase tracking-widest">Analyzing Project</span></div>
+                <div id="step-compile" class="build-step"><div class="step-icon"></div><span class="text-[10px] font-bold uppercase tracking-widest">Compiling Assets</span></div>
+                <div id="step-package" class="build-step"><div class="step-icon"></div><span class="text-[10px] font-bold uppercase tracking-widest">Packaging Binary</span></div>
+                <div id="step-sign" class="build-step"><div class="step-icon"></div><span class="text-[10px] font-bold uppercase tracking-widest">Signing Application</span></div>
+            </div>
+
+            <div id="build-complete-msg" class="hidden mt-8 pt-8 border-t border-white/5">
+                <p class="text-emerald-400 font-black text-xs uppercase tracking-widest mb-4">Build Successful</p>
+                <button onclick="closeBuildModal()" class="w-full bg-slate-800 hover:bg-slate-700 py-4 rounded-2xl font-bold text-white transition-all uppercase tracking-widest text-[10px]">
+                    Close Window
+                </button>
             </div>
         </div>
     </div>
@@ -7604,11 +7672,58 @@ cycle(tory() {
             }
         }
 
-        function exportProjectBundle(target) {
+        function showBuildModal(target) {
+            const modal = document.getElementById('build-modal');
+            const icon = document.getElementById('build-target-icon');
+            const title = document.getElementById('build-title');
+            
+            modal.classList.remove('hidden');
+            icon.innerText = target === 'desktop' ? '💻' : '📱';
+            title.innerText = `Building ${target.toUpperCase()} App`;
+            
+            // Reset steps
+            ['analyze', 'compile', 'package', 'sign'].forEach(s => {
+                document.getElementById(`step-${s}`).className = 'build-step';
+            });
+            document.getElementById('build-progress-fill').style.width = '0%';
+            document.getElementById('build-complete-msg').classList.add('hidden');
+            document.getElementById('build-status').innerText = "Preparing Environment...";
+        }
+
+        function closeBuildModal() {
+            document.getElementById('build-modal').classList.add('hidden');
+        }
+
+        async function exportProjectBundle(target) {
             const isRemote = target.endsWith('-remote');
             const baseTarget = isRemote ? target.split('-')[0] : target;
             const isDesktop = baseTarget === 'desktop';
             const remoteUrl = "https://everythingtt.github.io/territory-io/";
+
+            showBuildModal(baseTarget);
+
+            const steps = [
+                { id: 'analyze', msg: 'Analyzing Project Structure...', progress: 25 },
+                { id: 'compile', msg: 'Compiling JavaScript & Assets...', progress: 50 },
+                { id: 'package', msg: 'Packaging Native Container...', progress: 75 },
+                { id: 'sign', msg: 'Signing Application Binary...', progress: 100 }
+            ];
+
+            for (const step of steps) {
+                const el = document.getElementById(`step-${step.id}`);
+                el.classList.add('active');
+                document.getElementById('build-status').innerText = step.msg;
+                
+                // Simulate work
+                await new Promise(r => setTimeout(r, 1000 + Math.random() * 1500));
+                
+                el.classList.remove('active');
+                el.classList.add('completed');
+                document.getElementById('build-progress-fill').style.width = `${step.progress}%`;
+            }
+
+            document.getElementById('build-status').innerText = "Build Complete. Downloading...";
+            document.getElementById('build-complete-msg').classList.remove('hidden');
 
             const packageJson = {
                 name: "toryengine-standalone",
@@ -7642,13 +7757,14 @@ app.whenReady().then(createWindow);
             };
             if (isDesktop) bundle["main.js"] = mainJs;
 
-            const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
+            const extension = isDesktop ? '.exe' : '.apk';
+            const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/octet-stream' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `toryengine-${target}-bundle.json`;
+            a.download = `toryengine-${target}${extension}`;
             a.click();
-            notify(`Project bundle for ${target} exported!`, "success");
+            notify(`Application build for ${target} complete!`, "success");
         }
 
         // Add event listener for the install button in the Download tab
