@@ -781,7 +781,7 @@
             <div class="flex items-center gap-4">
                 <div class="flex items-center gap-3">
                     <h2 class="text-xl font-black text-amber-400 italic uppercase tracking-tight">ToryEngine Studio</h2>
-                    <span class="px-2 py-0.5 rounded-md border border-amber-400/30 bg-amber-500/10 text-[9px] font-bold text-amber-300 uppercase tracking-widest">v3.0.2</span>
+                    <span class="px-2 py-0.5 rounded-md border border-amber-400/30 bg-amber-500/10 text-[9px] font-bold text-amber-300 uppercase tracking-widest">v3.0.3</span>
                 </div>
                 <div class="h-6 w-[1px] bg-slate-800"></div>
                 <div class="flex gap-2">
@@ -878,6 +878,31 @@
 
                     <div class="grid grid-cols-1 gap-6">
                         <!-- Function Documentation -->
+                        <div class="bg-slate-800/50 p-6 rounded-2xl border border-white/5">
+                            <code class="text-blue-400 font-bold text-sm">config(key, value)</code>
+                            <p class="text-slate-400 text-xs mt-2">Get or set global game configuration values (e.g., 'CYCLE', 'CITY_BONUS').</p>
+                        </div>
+
+                        <div class="bg-slate-800/50 p-6 rounded-2xl border border-white/5">
+                            <code class="text-blue-400 font-bold text-sm">river(x1, y1, x2, y2, width)</code>
+                            <p class="text-slate-400 text-xs mt-2">Carves a river of water between two points with a specified width.</p>
+                        </div>
+
+                        <div class="bg-slate-800/50 p-6 rounded-2xl border border-white/5">
+                            <code class="text-blue-400 font-bold text-sm">cluster(x, y, size, type)</code>
+                            <p class="text-slate-400 text-xs mt-2">Generates a random cluster of tiles around a point.</p>
+                        </div>
+
+                        <div class="bg-slate-800/50 p-6 rounded-2xl border border-white/5">
+                            <code class="text-blue-400 font-bold text-sm">tick(callback)</code>
+                            <p class="text-slate-400 text-xs mt-2">Registers a function to run every second during the game loop.</p>
+                        </div>
+
+                        <div class="bg-slate-800/50 p-6 rounded-2xl border border-white/5">
+                            <code class="text-blue-400 font-bold text-sm">cycle(callback)</code>
+                            <p class="text-slate-400 text-xs mt-2">Registers a function to run every 10 seconds (every cycle).</p>
+                        </div>
+
                         <div class="bg-slate-800/50 p-6 rounded-2xl border border-white/5">
                             <code class="text-blue-400 font-bold text-sm">paint(x, y, width, height, type)</code>
                             <p class="text-slate-400 text-xs mt-2">Fills a rectangular area with a specific tile type (Alias: rect).</p>
@@ -1108,7 +1133,7 @@ event(btnId, 'click', tory() {
     <div id="login-screen" class="fixed inset-0 bg-[radial-gradient(circle_at_top,_#1e293b_0%,_#020617_55%)] z-[100] flex items-center justify-center p-6">
         <div class="bg-slate-900/90 backdrop-blur-xl p-8 rounded-3xl border border-slate-700/80 shadow-[0_30px_80px_rgba(2,6,23,0.9)] w-full max-w-md">
             <div class="flex items-center justify-end mb-4">
-                <span class="px-2 py-1 rounded-md border border-slate-700 bg-slate-950 text-[9px] text-slate-400 font-mono uppercase">v3.0.2</span>
+                <span class="px-2 py-1 rounded-md border border-slate-700 bg-slate-950 text-[9px] text-slate-400 font-mono uppercase">v3.0.3</span>
             </div>
             <h1 class="text-3xl font-black text-center text-blue-400 mb-6 italic tracking-tight">TERRITORY.IO</h1>
             
@@ -1388,7 +1413,7 @@ event(btnId, 'click', tory() {
         };
 
         const state = {
-            version: '3.0.2', // Current version tag (Update Logic Improvements)
+            version: '3.0.3', // Current version tag (Advanced Map & Logic Hooks)
             username: '',
             playerId: 'pr' + Math.floor(Math.random() * 90 + 10), // Unique 2-digit ID
             initialized: false, // Prevent multiple initializations
@@ -1429,6 +1454,7 @@ event(btnId, 'click', tory() {
             planning: { active: false, turns: Array.from({length: 10}, () => []), activeTurn: 0, warId: null, assaultType: 'support' },
             events: [], // Historical event log: { time: Date.now(), msg: '...', type: 'war'|'alliance'|'collapse' }
             botAllyCooldowns: {}, // { entityIdx: timestamp }
+            hooks: { onTick: [], onCycle: [], onWar: [] }, // ToryScript Hooks
             assaultInProgress: false,
             activeWarId: null,
             
@@ -1489,6 +1515,7 @@ event(btnId, 'click', tory() {
                                 { id: 's1', name: 'main.tory', type: 'script', content: '// ToryScript v2.9\nprint("Engine Booted...");\n\n// Run on game start\ntory onStart() {\n    reset();\n    seed(0.1, 0.45);\n    home(192, 108);\n}\n\nonStart();' },
                                 { id: 's2', name: 'archipelago.tory', type: 'script', content: '// ToryScript Archipelago Generator\nreset();\nseed(0.2, 0.5);\n\n// Add some manual islands\nisland(100, 100, 20, "land");\nisland(284, 150, 15, "land");\n\n// Add cities\ncity(100, 100);\ncity(284, 150);\n\nhome(100, 100);\nprint("Archipelago Generated!");' },
                                 { id: 's3', name: 'workspace_explorer.tory', type: 'script', content: '// Advanced Workspace Explorer\n// Injects a temporary sidebar to view VFS\n\ntory toggleExplorer() {\n    tory id = "tory-explorer-sidebar";\n    tory existing = document.getElementById(id);\n    if (existing) {\n        existing.remove();\n        print("Explorer Closed.");\n        return;\n    }\n\n    tory sidebar = document.createElement("div");\n    sidebar.id = id;\n    sidebar.style.cssText = "position:fixed;right:0;top:0;width:300px;height:100vh;background:rgba(15,23,42,0.95);backdrop-filter:blur(10px);border-left:1px solid rgba(255,255,255,0.1);z-index:9999;padding:20px;color:white;font-family:sans-serif;overflow-y:auto;transition:all 0.3s ease";\n    \n    tory html = "<h2 style=\'margin-bottom:20px;font-size:18px;font-style:italic;font-weight:900\'>WORKSPACE EXPLORER</h2>";\n    \n    tory entities = getEntities();\n    html += "<div style=\'margin-bottom:20px;padding:15px;background:rgba(255,255,255,0.05);border-radius:12px\'>";\n    html += "<div style=\'font-size:10px;color:#64748b;font-weight:bold;margin-bottom:5px\'>MAP STATS</div>";\n    html += "<div>Entities: " + entities.length + "</div>";\n    html += "<div>Version: " + VERSION + "</div>";\n    html += "</div>";\n\n    html += "<div style=\'font-size:10px;color:#64748b;font-weight:bold;margin-bottom:10px\'>ACTIVE VFS LOG</div>";\n    html += "<div id=\'explorer-vfs-content\' style=\'font-size:12px;display:flex;flex-direction:column;gap:8px\'>";\n    html += "Searching VFS...</div>";\n\n    sidebar.innerHTML = html;\n    document.body.appendChild(sidebar);\n    print("Explorer Opened.");\n}\n\ntoggleExplorer();' },
+                                { id: 's4', name: 'live_mod.tory', type: 'script', content: '// Live Mod Example\n// Increases player balance every cycle and logs every tick\n\ntick(tory() {\n    // This runs every second\n    // print("Tick..."); \n});\n\ncycle(tory() {\n    // This runs every 10 seconds\n    tory current = player("balance");\n    player("balance", current + 1000);\n    print("Cycle Bonus: +$1000");\n});\n\nprint("Live Mod Active!");' },
                                 { id: 'f1_bots', name: 'bots', type: 'folder', children: [
                                     { id: 's_aggro', name: 'aggressive.tory', type: 'script', content: '// Aggressive Bot Logic\ntory onBotTick(botIdx) {\n    tory b = bot(botIdx);\n    if (b.balance > 500) {\n        // Expansion logic\n    }\n}' }
                                 ]},
@@ -2130,7 +2157,13 @@ event(btnId, 'click', tory() {
                 { pattern: /\bid\s*\(/g, replacement: 'getEntityById(' },
                 { pattern: /\bhtml\s*\(/g, replacement: 'createUI(' },
                 { pattern: /\bcss\s*\(/g, replacement: 'applyStyle(' },
-                { pattern: /\bevent\s*\(/g, replacement: 'addEvent(' }
+                { pattern: /\bevent\s*\(/g, replacement: 'addEvent(' },
+                { pattern: /\bconfig\s*\(/g, replacement: 'gameConfig(' },
+                { pattern: /\briver\s*\(/g, replacement: 'drawRiver(' },
+                { pattern: /\bcluster\s*\(/g, replacement: 'drawCluster(' },
+                { pattern: /\btick\s*\(/g, replacement: 'onTick(' },
+                { pattern: /\bcycle\s*\(/g, replacement: 'onCycle(' },
+                { pattern: /\bclaim\s*\(/g, replacement: 'claimAll(' }
             ];
 
             mapping.forEach(m => {
@@ -2211,6 +2244,55 @@ event(btnId, 'click', tory() {
                 },
                 createFaction: (name, members) => {
                     state.factions.push({ name, members });
+                },
+                gameConfig: (key, val) => {
+                    if (val !== undefined) CONFIG[key] = val;
+                    return CONFIG[key];
+                },
+                drawRiver: (x1, y1, x2, y2, width = 1) => {
+                    const dx = Math.abs(x2 - x1);
+                    const dy = Math.abs(y2 - y1);
+                    const sx = (x1 < x2) ? 1 : -1;
+                    const sy = (y1 < y2) ? 1 : -1;
+                    let err = dx - dy;
+                    while (true) {
+                        for (let i = -Math.floor(width/2); i <= Math.floor(width/2); i++) {
+                            for (let j = -Math.floor(width/2); j <= Math.floor(width/2); j++) {
+                                const rx = x1 + j, ry = y1 + i;
+                                if (rx >= 0 && rx < CONFIG.COLS && ry >= 0 && ry < CONFIG.ROWS) {
+                                    (state.engine.initialized ? state.engine.mapData.tileTypes : state.tileTypes)[ry * CONFIG.COLS + rx] = 0;
+                                }
+                            }
+                        }
+                        if (x1 === x2 && y1 === y2) break;
+                        const e2 = 2 * err;
+                        if (e2 > -dy) { err -= dy; x1 += sx; }
+                        if (e2 < dx) { err += dx; y1 += sy; }
+                    }
+                },
+                drawCluster: (x, y, size, type) => {
+                    const tMap = { 'water': 0, 'land': 1, 'city': 5, 'capital': 6, 'mountain': 7 };
+                    const t = tMap[type] !== undefined ? tMap[type] : 1;
+                    for (let i = 0; i < size; i++) {
+                        const cx = x + Math.floor(Math.random() * Math.sqrt(size) * 2 - Math.sqrt(size));
+                        const cy = y + Math.floor(Math.random() * Math.sqrt(size) * 2 - Math.sqrt(size));
+                        if (cx >= 0 && cx < CONFIG.COLS && cy >= 0 && cy < CONFIG.ROWS) {
+                            (state.engine.initialized ? state.engine.mapData.tileTypes : state.tileTypes)[cy * CONFIG.COLS + cx] = t;
+                        }
+                    }
+                },
+                onTick: (callback) => { if (typeof callback === 'function') state.hooks.onTick.push(callback); },
+                onCycle: (callback) => { if (typeof callback === 'function') state.hooks.onCycle.push(callback); },
+                claimAll: (coordsArray, ownerIdx = 1) => {
+                    if (!Array.isArray(coordsArray)) return;
+                    coordsArray.forEach(coord => {
+                        if (coord && typeof coord.x === 'number' && typeof coord.y === 'number') {
+                            claim(coord.x, coord.y, true, ownerIdx, true);
+                        }
+                    });
+                    // Redraw the entire map once after batch claim
+                    if (state.engine.initialized) drawEngineMap();
+                    else drawRegion(0, 0, CONFIG.COLS-1, CONFIG.ROWS-1);
                 },
                 noise: (scale = 0.1, threshold = 0.45) => {
                     for (let i = 0; i < CONFIG.ROWS; i++) {
@@ -4997,6 +5079,11 @@ event(btnId, 'click', tory() {
             if (now - state.lastTick >= 1000) {
                 state.lastTick = now;
                 
+                // Execute ToryScript onTick hooks
+                state.hooks.onTick.forEach(hook => {
+                    try { hook(); } catch(e) { console.error("ToryScript onTick hook error:", e); }
+                });
+
                 // Intermission Timer Countdown
                 if (state.intermissionActive) {
                     state.intermissionTimer--;
@@ -5183,6 +5270,12 @@ event(btnId, 'click', tory() {
 
                 if (state.cycleTimer >= CONFIG.CYCLE) {
                     state.needsDamCheck = true;
+                    
+                    // Execute ToryScript onCycle hooks
+                    state.hooks.onCycle.forEach(hook => {
+                        try { hook(); } catch(e) { console.error("ToryScript onCycle hook error:", e); }
+                    });
+
                     const bonus = totalIncome + (state.ownedCount * 2);
                     if (state.balance !== Infinity) {
                         state.balance = Math.min(maxBalance, state.balance + bonus);
