@@ -781,7 +781,7 @@
             <div class="flex items-center gap-4">
                 <div class="flex items-center gap-3">
                     <h2 class="text-xl font-black text-amber-400 italic uppercase tracking-tight">ToyEngine Studio</h2>
-                    <span class="px-2 py-0.5 rounded-md border border-amber-400/30 bg-amber-500/10 text-[9px] font-bold text-amber-300 uppercase tracking-widest">v3.0.0</span>
+                    <span class="px-2 py-0.5 rounded-md border border-amber-400/30 bg-amber-500/10 text-[9px] font-bold text-amber-300 uppercase tracking-widest">v3.0.1</span>
                 </div>
                 <div class="h-6 w-[1px] bg-slate-800"></div>
                 <div class="flex gap-2">
@@ -1108,7 +1108,7 @@ event(btnId, 'click', tory() {
     <div id="login-screen" class="fixed inset-0 bg-[radial-gradient(circle_at_top,_#1e293b_0%,_#020617_55%)] z-[100] flex items-center justify-center p-6">
         <div class="bg-slate-900/90 backdrop-blur-xl p-8 rounded-3xl border border-slate-700/80 shadow-[0_30px_80px_rgba(2,6,23,0.9)] w-full max-w-md">
             <div class="flex items-center justify-end mb-4">
-                <span class="px-2 py-1 rounded-md border border-slate-700 bg-slate-950 text-[9px] text-slate-400 font-mono uppercase">v3.0.0</span>
+                <span class="px-2 py-1 rounded-md border border-slate-700 bg-slate-950 text-[9px] text-slate-400 font-mono uppercase">v3.0.1</span>
             </div>
             <h1 class="text-3xl font-black text-center text-blue-400 mb-6 italic tracking-tight">TERRITORY.IO</h1>
             
@@ -1388,7 +1388,7 @@ event(btnId, 'click', tory() {
         };
 
         const state = {
-            version: '3.0.0', // Current version tag (Visual Configs & UI API)
+            version: '3.0.1', // Current version tag (ToryScript Fix)
             username: '',
             playerId: 'pr' + Math.floor(Math.random() * 90 + 10), // Unique 2-digit ID
             initialized: false, // Prevent multiple initializations
@@ -2100,7 +2100,14 @@ event(btnId, 'click', tory() {
             
             // Keyword mapping (Regex based transpilation)
             const mapping = [
-                { pattern: /\btory\b/g, replacement: 'function' },
+                // Advanced 'tory' replacement:
+                // 1. tory name() -> function name()
+                { pattern: /\btory\s+([a-zA-Z0-9_$]+)\s*\(/g, replacement: 'function $1(' },
+                // 2. tory() -> function()
+                { pattern: /\btory\s*\(/g, replacement: 'function(' },
+                // 3. remaining tory -> let (for variable declarations)
+                { pattern: /\btory\b/g, replacement: 'let' },
+
                 { pattern: /\bpaint\s*\(/g, replacement: 'fill(' },
                 { pattern: /\brect\s*\(/g, replacement: 'fill(' },
                 { pattern: /\bisland\s*\(/g, replacement: 'circle(' },
