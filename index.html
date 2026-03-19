@@ -799,7 +799,6 @@
                     <div id="engine-status-file" class="px-2 py-1 rounded-md border border-slate-700 bg-slate-900 text-[9px] text-emerald-300 font-mono uppercase">File: main.tory</div>
                 </div>
                 <button type="button" onclick="saveEngineMap()" class="bg-emerald-600 hover:bg-emerald-500 px-4 py-1.5 rounded-lg text-white text-[10px] font-bold uppercase border border-emerald-400/40 transition-colors" title="Save map to workspace">Save Map</button>
-                <button type="button" onclick="syncToGitHub()" class="bg-blue-600 hover:bg-blue-500 px-4 py-1.5 rounded-lg text-white text-[10px] font-bold uppercase border border-blue-400/40 transition-colors" title="Sync current codebase to GitHub">Sync to GitHub</button>
                 <button type="button" onclick="exportToryMap()" class="bg-purple-600 hover:bg-purple-500 px-4 py-1.5 rounded-lg text-white text-[10px] font-bold uppercase border border-purple-400/40 transition-colors" title="Export entire workspace as .torymap">Export Workspace</button>
                 <button type="button" onclick="importToryMapTrigger()" class="bg-slate-700 hover:bg-slate-600 px-4 py-1.5 rounded-lg text-slate-200 text-[10px] font-bold uppercase border border-slate-600 transition-colors" title="Import .torymap workspace">Import Workspace</button>
                 <input type="file" id="torymap-import-input" accept=".torymap" class="hidden" onchange="handleToryMapImport(this)">
@@ -2549,61 +2548,6 @@ cycle(tory() {
                 } catch (e) { console.error("Failed to load saved map", e); }
             }
         });
-
-        async function syncToGitHub() {
-            const pat = prompt("Enter GitHub Personal Access Token (PAT):", "");
-            if (!pat) return;
-
-            const owner = 'everythingtt';
-            const repo = 'territory-io';
-            const path = 'index.html';
-            const branch = 'main';
-
-            notify("Syncing to GitHub...", "info");
-
-            try {
-                // 1. Get the current file's SHA
-                const getUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`;
-                const getRes = await fetch(getUrl, {
-                    headers: { 'Authorization': `token ${pat}` }
-                });
-                
-                if (!getRes.ok) throw new Error(`Failed to fetch file info: ${getRes.statusText}`);
-                const fileData = await getRes.json();
-                const sha = fileData.sha;
-
-                // 2. Prepare the update
-                // We'll send the entire content of index.html
-                // Since this is running in the browser, we need the source of the CURRENT page.
-                const content = document.documentElement.outerHTML;
-                const encodedContent = btoa(unescape(encodeURIComponent(content)));
-
-                const putUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
-                const putRes = await fetch(putUrl, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `token ${pat}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        message: `Update index.html via ToyEngine Studio v${state.version}`,
-                        content: encodedContent,
-                        sha: sha,
-                        branch: branch
-                    })
-                });
-
-                if (putRes.ok) {
-                    notify("Successfully synced to GitHub!", "success");
-                } else {
-                    const error = await putRes.json();
-                    throw new Error(error.message || putRes.statusText);
-                }
-            } catch (err) {
-                console.error("GitHub Sync Error:", err);
-                notify(`Sync failed: ${err.message}`, "error");
-            }
-        }
 
         const viewport = document.getElementById('viewport');
         const container = document.getElementById('game-container');
