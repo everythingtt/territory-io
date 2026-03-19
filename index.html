@@ -1072,7 +1072,7 @@ tory setupMap() {      // Function definition
                     </section>
 
                     <!-- Example Scenarios -->
-                    <section class="space-y-6 pb-20">
+                    <section class="space-y-6 pb-10">
                         <h3 class="text-xl font-bold text-white uppercase tracking-widest">Master Scenarios</h3>
                         
                         <!-- Scenario 1 -->
@@ -1110,6 +1110,27 @@ cycle(tory() {
                             </div>
                         </div>
                     </section>
+
+                    <!-- Deployment Guide -->
+                    <section class="space-y-6 pb-20">
+                        <h3 class="text-xl font-bold text-emerald-500 uppercase tracking-widest flex items-center gap-3">
+                            <span class="w-8 h-8 bg-emerald-500/20 rounded-lg flex items-center justify-center text-sm">07</span>
+                            Deployment & Hosting
+                        </h3>
+                        <div class="bg-slate-800/30 p-8 rounded-3xl border border-white/5 space-y-6">
+                            <p class="text-slate-400 text-sm leading-relaxed">Territory.io is optimized for static hosting. For the best experience, deploy your project to <b>GitHub Pages</b>.</p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="bg-black/30 p-6 rounded-xl border border-white/5">
+                                    <div class="text-emerald-400 font-bold text-xs mb-2 uppercase">1. Repository Setup</div>
+                                    <p class="text-slate-500 text-[10px]">Create a new GitHub repository and push your <code>index.html</code>, <code>sw.js</code>, and <code>manifest.webmanifest</code>.</p>
+                                </div>
+                                <div class="bg-black/30 p-6 rounded-xl border border-white/5">
+                                    <div class="text-emerald-400 font-bold text-xs mb-2 uppercase">2. Enable Pages</div>
+                                    <p class="text-slate-500 text-[10px]">Go to Settings > Pages and set the source to your 'main' branch. Your engine will be live at <code>username.github.io/repo</code>.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
                 </div>
             </div>
 
@@ -1128,13 +1149,18 @@ cycle(tory() {
                                 <div class="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center text-2xl">💻</div>
                                 <div>
                                     <h3 class="text-xl font-bold text-white uppercase">Desktop EXE</h3>
-                                    <p class="text-slate-500 text-xs uppercase font-bold tracking-widest">Windows (Electron)</p>
+                                    <p class="text-slate-500 text-xs uppercase font-bold tracking-widest">Windows (Electron / Nativefier)</p>
                                 </div>
                             </div>
-                            <p class="text-slate-400 text-sm leading-relaxed flex-1">Convert ToryEngine into a desktop executable using Electron.js. Includes native windowing, taskbar integration, and high-performance hardware acceleration.</p>
-                            <button onclick="exportProjectBundle('desktop')" class="w-full bg-emerald-600 hover:bg-emerald-500 py-4 rounded-2xl font-bold text-white shadow-lg shadow-emerald-900/20 transition-all uppercase tracking-widest text-xs">
-                                Export EXE Bundle
-                            </button>
+                            <p class="text-slate-400 text-sm leading-relaxed flex-1">Convert Territory.io into a desktop executable. We recommend <b>Nativefier</b> or <b>PWABuilder</b> for high compatibility with GitHub Pages.</p>
+                            <div class="flex gap-2">
+                                <button onclick="exportProjectBundle('desktop')" class="flex-1 bg-emerald-600 hover:bg-emerald-500 py-4 rounded-2xl font-bold text-white shadow-lg shadow-emerald-900/20 transition-all uppercase tracking-widest text-[10px]">
+                                    Offline Bundle
+                                </button>
+                                <button onclick="exportProjectBundle('desktop-remote')" class="flex-1 bg-slate-800 hover:bg-slate-700 py-4 rounded-2xl font-bold text-slate-300 border border-white/10 transition-all uppercase tracking-widest text-[10px]">
+                                    Live Sync (Remote)
+                                </button>
+                            </div>
                         </div>
 
                         <!-- Mobile APK Section -->
@@ -1143,13 +1169,18 @@ cycle(tory() {
                                 <div class="w-12 h-12 bg-blue-500/20 rounded-2xl flex items-center justify-center text-2xl">📱</div>
                                 <div>
                                     <h3 class="text-xl font-bold text-white uppercase">Mobile APK</h3>
-                                    <p class="text-slate-500 text-xs uppercase font-bold tracking-widest">Android (Capacitor)</p>
+                                    <p class="text-slate-500 text-xs uppercase font-bold tracking-widest">Android (Capacitor / TWA)</p>
                                 </div>
                             </div>
-                            <p class="text-slate-400 text-sm leading-relaxed flex-1">Wrap ToryEngine in a native Android container using Ionic Capacitor. Provides a true APK experience with splash screens and mobile optimizations.</p>
-                            <button onclick="exportProjectBundle('mobile')" class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl font-bold text-white shadow-lg shadow-blue-900/20 transition-all uppercase tracking-widest text-xs">
-                                Export APK Bundle
-                            </button>
+                            <p class="text-slate-400 text-sm leading-relaxed flex-1">Wrap the engine in a native Android container. Highly compatible with <b>Ionic Capacitor</b> or <b>Google Bubblewrap</b> via the GitHub Pages URL.</p>
+                            <div class="flex gap-2">
+                                <button onclick="exportProjectBundle('mobile')" class="flex-1 bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl font-bold text-white shadow-lg shadow-blue-900/20 transition-all uppercase tracking-widest text-[10px]">
+                                    Offline Bundle
+                                </button>
+                                <button onclick="exportProjectBundle('mobile-remote')" class="flex-1 bg-slate-800 hover:bg-slate-700 py-4 rounded-2xl font-bold text-slate-300 border border-white/10 transition-all uppercase tracking-widest text-[10px]">
+                                    Live Sync (Remote)
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -7574,7 +7605,11 @@ cycle(tory() {
         }
 
         function exportProjectBundle(target) {
-            const isDesktop = target === 'desktop';
+            const isRemote = target.endsWith('-remote');
+            const baseTarget = isRemote ? target.split('-')[0] : target;
+            const isDesktop = baseTarget === 'desktop';
+            const remoteUrl = "https://everythingtt.github.io/territory-io/";
+
             const packageJson = {
                 name: "toryengine-standalone",
                 version: state.version,
@@ -7582,20 +7617,28 @@ cycle(tory() {
                 dependencies: isDesktop ? { "electron": "^25.0.0" } : { "@capacitor/core": "^5.0.0" }
             };
 
-            const mainJs = isDesktop ? `
+            let mainJs = '';
+            if (isDesktop) {
+                mainJs = `
 const { app, BrowserWindow } = require('electron');
 function createWindow () {
-  const win = new BrowserWindow({ width: 1280, height: 720, webPreferences: { nodeIntegration: true } });
-  win.loadFile('index.html');
+  const win = new BrowserWindow({ 
+    width: 1280, 
+    height: 720, 
+    autoHideMenuBar: true,
+    webPreferences: { nodeIntegration: ${isRemote ? 'false' : 'true'} } 
+  });
+  ${isRemote ? `win.loadURL('${remoteUrl}');` : `win.loadFile('index.html');`}
 }
 app.whenReady().then(createWindow);
-            ` : '';
+                `;
+            }
 
             const bundle = {
                 "package.json": JSON.stringify(packageJson, null, 2),
-                "index.html": document.documentElement.outerHTML,
+                "index.html": isRemote && !isDesktop ? `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=${remoteUrl}"></head></html>` : document.documentElement.outerHTML,
                 "sw.js": "// Service worker placeholder",
-                "manifest.webmanifest": JSON.stringify({ name: "ToryEngine", short_name: "Tory", start_url: "index.html", display: "standalone" })
+                "manifest.webmanifest": JSON.stringify({ name: "ToryEngine", short_name: "Tory", start_url: isRemote ? remoteUrl : "index.html", display: "standalone" })
             };
             if (isDesktop) bundle["main.js"] = mainJs;
 
