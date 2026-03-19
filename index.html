@@ -1156,6 +1156,14 @@ tory setupMap() {      // Function definition
                                     <code class="text-cyan-400 block mb-1">image(url, style, [layer])</code>
                                     <span class="text-[10px] text-slate-500 uppercase">Static Media</span>
                                 </div>
+                                <div class="bg-black/30 p-4 rounded-xl border border-white/5 text-center">
+                                    <code class="text-cyan-400 block mb-1">gif(url, style, [layer])</code>
+                                    <span class="text-[10px] text-slate-500 uppercase">Animated GIF</span>
+                                </div>
+                                <div class="bg-black/30 p-4 rounded-xl border border-white/5 text-center">
+                                    <code class="text-cyan-400 block mb-1">audio(url, opts)</code>
+                                    <span class="text-[10px] text-slate-500 uppercase">MP3/Sound FX</span>
+                                </div>
                             </div>
 
                             <div class="bg-blue-500/5 p-4 rounded-2xl border border-blue-500/20">
@@ -1163,7 +1171,7 @@ tory setupMap() {      // Function definition
                                     <span class="text-blue-400 text-sm">🛡️</span>
                                     <div>
                                         <div class="text-blue-400 font-black text-[10px] uppercase mb-1">Safety & Garbage Collection</div>
-                                        <p class="text-slate-500 text-[10px] leading-relaxed">To prevent memory leaks and crashes, all injected UI elements are automatically purged when their parent script is stopped. Only elements created via ToryScript can be styled or modified using <code class="text-slate-400">css()</code> or <code class="text-slate-400">event()</code>.</p>
+                                        <p class="text-slate-500 text-[10px] leading-relaxed">To prevent memory leaks and crashes, all injected UI elements are automatically purged when their parent script is stopped. Only elements created via ToryScript, Sandbox Engine components, or core game buttons (starting with <code class="text-slate-400">btn-</code>) can be styled or modified using <code class="text-slate-400">css()</code> or <code class="text-slate-400">event()</code>.</p>
                                     </div>
                                 </div>
                             </div>
