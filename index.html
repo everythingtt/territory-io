@@ -979,6 +979,14 @@ tory setupMap() {      // Function definition
                                     <h4 class="text-white font-bold text-sm mb-2">stop()</h4>
                                     <p class="text-slate-400 text-xs italic">Immediately terminate the current script session.</p>
                                 </div>
+                                <div>
+                                    <h4 class="text-white font-bold text-sm mb-2">openFile()</h4>
+                                    <p class="text-slate-400 text-xs italic">Standalone Only: Open a native file picker to read map data.</p>
+                                </div>
+                                <div>
+                                    <h4 class="text-white font-bold text-sm mb-2">saveFile(data, name)</h4>
+                                    <p class="text-slate-400 text-xs italic">Standalone Only: Save map data directly to the local filesystem.</p>
+                                </div>
                             </div>
                         </div>
                     </section>
@@ -1114,35 +1122,46 @@ cycle(tory() {
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <!-- PWA Section -->
-                        <div class="bg-slate-800/50 p-8 rounded-3xl border border-blue-500/20 space-y-6 flex flex-col">
-                            <div class="flex items-center gap-4">
-                                <div class="w-12 h-12 bg-blue-500/20 rounded-2xl flex items-center justify-center text-2xl">📱</div>
-                                <div>
-                                    <h3 class="text-xl font-bold text-white uppercase">Mobile APK (PWA)</h3>
-                                    <p class="text-slate-500 text-xs uppercase font-bold tracking-widest">Android & iOS</p>
-                                </div>
-                            </div>
-                            <p class="text-slate-400 text-sm leading-relaxed flex-1">Install ToryEngine directly from your browser. It behaves exactly like a native APK, featuring offline support, standalone windowing, and full-screen immersion.</p>
-                            <button id="pwa-install-btn" class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl font-bold text-white shadow-lg shadow-blue-900/20 transition-all uppercase tracking-widest text-xs">
-                                Install on Device
-                            </button>
-                        </div>
-
-                        <!-- Desktop Section -->
+                        <!-- Desktop EXE Section -->
                         <div class="bg-slate-800/50 p-8 rounded-3xl border border-emerald-500/20 space-y-6 flex flex-col">
                             <div class="flex items-center gap-4">
                                 <div class="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center text-2xl">💻</div>
                                 <div>
-                                    <h3 class="text-xl font-bold text-white uppercase">Desktop EXE (PWA)</h3>
-                                    <p class="text-slate-500 text-xs uppercase font-bold tracking-widest">Windows, Mac & Linux</p>
+                                    <h3 class="text-xl font-bold text-white uppercase">Desktop EXE</h3>
+                                    <p class="text-slate-500 text-xs uppercase font-bold tracking-widest">Windows (Electron)</p>
                                 </div>
                             </div>
-                            <p class="text-slate-400 text-sm leading-relaxed flex-1">Convert ToryEngine into a desktop executable. No browser tabs, no distractions. Direct access from your taskbar with high-performance hardware acceleration.</p>
-                            <button onclick="installDesktopApp()" class="w-full bg-emerald-600 hover:bg-emerald-500 py-4 rounded-2xl font-bold text-white shadow-lg shadow-emerald-900/20 transition-all uppercase tracking-widest text-xs">
-                                Create Desktop Link
+                            <p class="text-slate-400 text-sm leading-relaxed flex-1">Convert ToryEngine into a desktop executable using Electron.js. Includes native windowing, taskbar integration, and high-performance hardware acceleration.</p>
+                            <button onclick="exportProjectBundle('desktop')" class="w-full bg-emerald-600 hover:bg-emerald-500 py-4 rounded-2xl font-bold text-white shadow-lg shadow-emerald-900/20 transition-all uppercase tracking-widest text-xs">
+                                Export EXE Bundle
                             </button>
                         </div>
+
+                        <!-- Mobile APK Section -->
+                        <div class="bg-slate-800/50 p-8 rounded-3xl border border-blue-500/20 space-y-6 flex flex-col">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 bg-blue-500/20 rounded-2xl flex items-center justify-center text-2xl">📱</div>
+                                <div>
+                                    <h3 class="text-xl font-bold text-white uppercase">Mobile APK</h3>
+                                    <p class="text-slate-500 text-xs uppercase font-bold tracking-widest">Android (Capacitor)</p>
+                                </div>
+                            </div>
+                            <p class="text-slate-400 text-sm leading-relaxed flex-1">Wrap ToryEngine in a native Android container using Ionic Capacitor. Provides a true APK experience with splash screens and mobile optimizations.</p>
+                            <button onclick="exportProjectBundle('mobile')" class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl font-bold text-white shadow-lg shadow-blue-900/20 transition-all uppercase tracking-widest text-xs">
+                                Export APK Bundle
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- PWA Quick Install -->
+                    <div class="bg-gradient-to-r from-blue-600/20 to-purple-600/20 p-8 rounded-3xl border border-white/10 flex flex-col md:flex-row items-center gap-8">
+                        <div class="flex-1">
+                            <h3 class="text-xl font-bold text-white uppercase mb-2">Instant Web-App</h3>
+                            <p class="text-slate-400 text-sm">Don't want to build? Use the Progressive Web App (PWA) version. Installs instantly, works offline, and behaves like a native app.</p>
+                        </div>
+                        <button id="pwa-install-btn" class="px-10 py-4 bg-white text-slate-900 rounded-2xl font-black uppercase tracking-widest text-xs hover:scale-105 transition-all">
+                            Instant Install
+                        </button>
                     </div>
 
                     <!-- Unique Improvements Section -->
@@ -1154,8 +1173,8 @@ cycle(tory() {
                                 <p class="text-slate-500 text-[10px] leading-relaxed">Standalone apps automatically hide browser UI for 100% viewport utilization.</p>
                             </div>
                             <div class="bg-slate-900 border border-white/5 p-6 rounded-2xl">
-                                <div class="text-amber-400 font-black text-xs mb-2 uppercase">VFS Persistence</div>
-                                <p class="text-slate-500 text-[10px] leading-relaxed">Scripts and maps are saved directly to local storage with automated periodic backups.</p>
+                                <div class="text-amber-400 font-black text-xs mb-2 uppercase">Native FS Bridge</div>
+                                <p class="text-slate-500 text-[10px] leading-relaxed">Standalone versions gain access to the Local File System API for reading/writing maps directly.</p>
                             </div>
                             <div class="bg-slate-900 border border-white/5 p-6 rounded-2xl">
                                 <div class="text-amber-400 font-black text-xs mb-2 uppercase">Offline Architect</div>
@@ -1221,7 +1240,7 @@ cycle(tory() {
     <div id="login-screen" class="fixed inset-0 bg-[radial-gradient(circle_at_top,_#1e293b_0%,_#020617_55%)] z-[100] flex items-center justify-center p-6">
         <div class="bg-slate-900/90 backdrop-blur-xl p-8 rounded-3xl border border-slate-700/80 shadow-[0_30px_80px_rgba(2,6,23,0.9)] w-full max-w-md">
             <div class="flex items-center justify-end mb-4">
-                <span class="px-2 py-1 rounded-md border border-slate-700 bg-slate-950 text-[9px] text-slate-400 font-mono uppercase">v3.1.0</span>
+                <span class="px-2 py-1 rounded-md border border-slate-700 bg-slate-950 text-[9px] text-slate-400 font-mono uppercase">v3.2.0</span>
             </div>
             <h1 class="text-3xl font-black text-center text-blue-400 mb-6 italic tracking-tight">TERRITORY.IO</h1>
             
@@ -2239,6 +2258,8 @@ cycle(tory() {
                 { pattern: /\btory\b/g, replacement: 'let' },
 
                 { pattern: /\bwait\s*\(/g, replacement: 'await wait(' },
+                { pattern: /\bopenFile\s*\(/g, replacement: 'await openFile(' },
+                { pattern: /\bsaveFile\s*\(/g, replacement: 'await saveFile(' },
                 { pattern: /\bpaint\s*\(/g, replacement: 'fill(' },
                 { pattern: /\brect\s*\(/g, replacement: 'fill(' },
                 { pattern: /\bisland\s*\(/g, replacement: 'circle(' },
@@ -2287,6 +2308,20 @@ cycle(tory() {
             api: (scriptId, customLog) => ({
                 // Graphics/Map API
                 wait: (ms) => new Promise(resolve => setTimeout(resolve, ms)),
+                openFile: async () => {
+                    if (!window.showOpenFilePicker) return null;
+                    const [handle] = await window.showOpenFilePicker();
+                    const file = await handle.getFile();
+                    return await file.text();
+                },
+                saveFile: async (content, filename = "map.json") => {
+                    if (!window.showSaveFilePicker) return false;
+                    const handle = await window.showSaveFilePicker({ suggestedName: filename });
+                    const writable = await handle.createWritable();
+                    await writable.write(content);
+                    await writable.close();
+                    return true;
+                },
                 fill: (x, y, w, h, type) => {
                     const t = type === 'water' ? 0 : 1;
                     for (let i = y; i < y + h; i++) {
@@ -7536,6 +7571,41 @@ cycle(tory() {
                 notify("Thank you for installing ToryEngine!", "success");
                 deferredPrompt = null;
             }
+        }
+
+        function exportProjectBundle(target) {
+            const isDesktop = target === 'desktop';
+            const packageJson = {
+                name: "toryengine-standalone",
+                version: state.version,
+                main: isDesktop ? "main.js" : "index.html",
+                dependencies: isDesktop ? { "electron": "^25.0.0" } : { "@capacitor/core": "^5.0.0" }
+            };
+
+            const mainJs = isDesktop ? `
+const { app, BrowserWindow } = require('electron');
+function createWindow () {
+  const win = new BrowserWindow({ width: 1280, height: 720, webPreferences: { nodeIntegration: true } });
+  win.loadFile('index.html');
+}
+app.whenReady().then(createWindow);
+            ` : '';
+
+            const bundle = {
+                "package.json": JSON.stringify(packageJson, null, 2),
+                "index.html": document.documentElement.outerHTML,
+                "sw.js": "// Service worker placeholder",
+                "manifest.webmanifest": JSON.stringify({ name: "ToryEngine", short_name: "Tory", start_url: "index.html", display: "standalone" })
+            };
+            if (isDesktop) bundle["main.js"] = mainJs;
+
+            const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `toryengine-${target}-bundle.json`;
+            a.click();
+            notify(`Project bundle for ${target} exported!`, "success");
         }
 
         // Add event listener for the install button in the Download tab
