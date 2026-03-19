@@ -19,7 +19,14 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS);
+      // Use individual add calls to ensure one missing asset doesn't break the entire installation
+      return Promise.all(
+        ASSETS.map((asset) => {
+          return cache.add(asset).catch((err) => {
+            console.error(`Failed to cache asset: ${asset}`, err);
+          });
+        })
+      );
     })
   );
 });
