@@ -1,7 +1,8 @@
-const CACHE_NAME = 'territory-io-v2.9.0';
+const CACHE_NAME = 'territory-io-v3.0.2';
 const ASSETS = [
   '/',
   'index.html',
+  'manifest.webmanifest',
   'assets/rocket.gif',
   'assets/warplane.gif',
   'assets/transport-airplane.gif',
@@ -15,6 +16,7 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS);
@@ -32,11 +34,24 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
-    })
+    }).then(() => self.clients.claim())
   );
 });
 
 self.addEventListener('fetch', (event) => {
+  // Always fetch index.html from network first to check for updates
+  if (event.request.mode === 'navigate' || event.request.url.endsWith('index.html')) {
+    event.respondWith(
+      fetch(event.request).then((response) => {
+        return caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, response.clone());
+          return response;
+        });
+      }).catch(() => caches.match('index.html'))
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then((response) => {
       return response || fetch(event.request).then((fetchResponse) => {
@@ -45,10 +60,6 @@ self.addEventListener('fetch', (event) => {
           return fetchResponse;
         });
       });
-    }).catch(() => {
-      if (event.request.mode === 'navigate') {
-        return caches.match('index.html');
-      }
     })
   );
 });
