@@ -780,8 +780,8 @@
         <div class="bg-gradient-to-b from-slate-900 to-slate-950 border-b border-slate-800/80 px-5 py-3 flex justify-between items-center">
             <div class="flex items-center gap-4">
                 <div class="flex items-center gap-3">
-                    <h2 class="text-xl font-black text-amber-400 italic uppercase tracking-tight">ToyEngine Studio</h2>
-                    <span class="px-2 py-0.5 rounded-md border border-amber-400/30 bg-amber-500/10 text-[9px] font-bold text-amber-300 uppercase tracking-widest">v3.0.1</span>
+                    <h2 class="text-xl font-black text-amber-400 italic uppercase tracking-tight">ToryEngine Studio</h2>
+                    <span class="px-2 py-0.5 rounded-md border border-amber-400/30 bg-amber-500/10 text-[9px] font-bold text-amber-300 uppercase tracking-widest">v3.0.2</span>
                 </div>
                 <div class="h-6 w-[1px] bg-slate-800"></div>
                 <div class="flex gap-2">
@@ -1108,7 +1108,7 @@ event(btnId, 'click', tory() {
     <div id="login-screen" class="fixed inset-0 bg-[radial-gradient(circle_at_top,_#1e293b_0%,_#020617_55%)] z-[100] flex items-center justify-center p-6">
         <div class="bg-slate-900/90 backdrop-blur-xl p-8 rounded-3xl border border-slate-700/80 shadow-[0_30px_80px_rgba(2,6,23,0.9)] w-full max-w-md">
             <div class="flex items-center justify-end mb-4">
-                <span class="px-2 py-1 rounded-md border border-slate-700 bg-slate-950 text-[9px] text-slate-400 font-mono uppercase">v3.0.1</span>
+                <span class="px-2 py-1 rounded-md border border-slate-700 bg-slate-950 text-[9px] text-slate-400 font-mono uppercase">v3.0.2</span>
             </div>
             <h1 class="text-3xl font-black text-center text-blue-400 mb-6 italic tracking-tight">TERRITORY.IO</h1>
             
@@ -1388,7 +1388,7 @@ event(btnId, 'click', tory() {
         };
 
         const state = {
-            version: '3.0.1', // Current version tag (ToryScript Fix)
+            version: '3.0.2', // Current version tag (Update Logic Improvements)
             username: '',
             playerId: 'pr' + Math.floor(Math.random() * 90 + 10), // Unique 2-digit ID
             initialized: false, // Prevent multiple initializations
@@ -2751,7 +2751,8 @@ event(btnId, 'click', tory() {
         async function startUpdateCheck() {
             const check = async () => {
                 try {
-                    const response = await fetch('index.html', { cache: 'no-store' });
+                    // Use a timestamp to bypass any intermediate caches (like ISP or browser)
+                    const response = await fetch(`index.html?t=${Date.now()}`, { cache: 'no-store' });
                     const text = await response.text();
                     // Extract version from the fetched source code
                     const match = text.match(/version:\s*'([^']+)'/);
@@ -2772,6 +2773,16 @@ event(btnId, 'click', tory() {
             const interval = setInterval(async () => {
                 if (await check()) clearInterval(interval);
             }, CONFIG.UPDATE_CHECK_INTERVAL);
+        }
+
+        // Service Worker Update Handling
+        let refreshing = false;
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (refreshing) return;
+                refreshing = true;
+                window.location.reload();
+            });
         }
 
         const COLORS = {
