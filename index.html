@@ -1109,23 +1109,31 @@ tory setupMap() {      // Function definition
                             <p class="text-slate-400 text-sm leading-relaxed">Build custom interfaces directly inside the game container. All elements are added to the persistent UI layer.</p>
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div class="bg-black/30 p-4 rounded-xl border border-white/5 text-center">
-                                    <code class="text-cyan-400 block mb-1">html(str)</code>
-                                    <span class="text-[10px] text-slate-500 uppercase">Inject DOM</span>
+                                    <code class="text-cyan-400 block mb-1">html(str, [layer])</code>
+                                    <span class="text-[10px] text-slate-500 uppercase">Inject DOM ('map'|'hud')</span>
                                 </div>
                                 <div class="bg-black/30 p-4 rounded-xl border border-white/5 text-center">
                                     <code class="text-cyan-400 block mb-1">css(id, style)</code>
                                     <span class="text-[10px] text-slate-500 uppercase">Apply Styling</span>
                                 </div>
                                 <div class="bg-black/30 p-4 rounded-xl border border-white/5 text-center">
+                                    <code class="text-cyan-400 block mb-1">removeUI(id)</code>
+                                    <span class="text-[10px] text-slate-500 uppercase">Delete Element</span>
+                                </div>
+                                <div class="bg-black/30 p-4 rounded-xl border border-white/5 text-center">
+                                    <code class="text-cyan-400 block mb-1">clearUI([all])</code>
+                                    <span class="text-[10px] text-slate-500 uppercase">Wipe UI Layer</span>
+                                </div>
+                                <div class="bg-black/30 p-4 rounded-xl border border-white/5 text-center">
                                     <code class="text-cyan-400 block mb-1">event(id, type, fn)</code>
                                     <span class="text-[10px] text-slate-500 uppercase">Interaction</span>
                                 </div>
                                 <div class="bg-black/30 p-4 rounded-xl border border-white/5 text-center">
-                                    <code class="text-cyan-400 block mb-1">image(url, style)</code>
+                                    <code class="text-cyan-400 block mb-1">image(url, style, [layer])</code>
                                     <span class="text-[10px] text-slate-500 uppercase">Static Media</span>
                                 </div>
                                 <div class="bg-black/30 p-4 rounded-xl border border-white/5 text-center">
-                                    <code class="text-cyan-400 block mb-1">gif(url, style)</code>
+                                    <code class="text-cyan-400 block mb-1">gif(url, style, [layer])</code>
                                     <span class="text-[10px] text-slate-500 uppercase">Animated GIF</span>
                                 </div>
                                 <div class="bg-black/30 p-4 rounded-xl border border-white/5 text-center">
@@ -1202,8 +1210,8 @@ seed(0.15, 0.4); // Base noise
 // Carve a central shipping lane
 river(0, 108, 384, 108, 10);
 
-// Add a custom HUD
-tory hud = html("&lt;div id='map-hud'&gt;Archipelago Mode Active&lt;/div&gt;");
+// Add a custom HUD to the fixed layer (doesn't zoom)
+tory hud = html("&lt;div id='map-hud'&gt;Archipelago Mode Active&lt;/div&gt;", "hud");
 css(hud, "position:fixed; top:20px; right:20px; background:rgba(0,0,0,0.8); color:cyan; padding:15px; border-radius:12px; font-weight:bold; border:1px solid cyan;");
 
 print("Scenario Initialized.");</pre>
@@ -1638,7 +1646,9 @@ cycle(tory() {
                 <div id="label-name" class="text-white font-bold text-[12px] uppercase"></div>
                 <div id="label-balance" class="text-yellow-400 font-mono text-[14px] font-bold"></div>
             </div>
+            <div id="tory-ui-layer" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:50;"></div>
         </div>
+        <div id="tory-hud-layer" style="position:fixed; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index:10000;"></div>
     </div>
 
     <script>
@@ -2525,6 +2535,8 @@ toggleExplorer();` },
                 { pattern: /\bhtml\s*\(/g, replacement: 'createUI(' },
                 { pattern: /\bcss\s*\(/g, replacement: 'applyStyle(' },
                 { pattern: /\bevent\s*\(/g, replacement: 'addEvent(' },
+                { pattern: /\bremoveUI\s*\(/g, replacement: 'removeUI(' },
+                { pattern: /\bclearUI\s*\(/g, replacement: 'clearUI(' },
                 { pattern: /\bimage\s*\(/g, replacement: 'createImage(' },
                 { pattern: /\bgif\s*\(/g, replacement: 'createGif(' },
                 { pattern: /\baudio\s*\(/g, replacement: 'createAudio(' },
@@ -2760,30 +2772,53 @@ toggleExplorer();` },
                     const ent = state.entities.find(e => e.id === id);
                     return ent ? { idx: state.entities.indexOf(ent), name: ent.name, type: ent.type } : null;
                 },
-                // --- UI/UX API ---
-                createUI: (html) => {
+                // --- Robust UI/UX API ---
+                createUI: (html, layer = 'map') => {
+                    const layerEl = document.getElementById(layer === 'hud' ? 'tory-hud-layer' : 'tory-ui-layer');
+                    if (!layerEl) return null;
+                    
                     const div = document.createElement('div');
-                    div.innerHTML = html;
+                    div.innerHTML = html.trim();
                     const el = div.firstElementChild;
                     if (el) {
+                        if (!el.id) el.id = `tory-el-${Date.now()}-${Math.floor(Math.random()*1000)}`;
                         el.classList.add('tory-ui-element');
-                        container.appendChild(el);
+                        el.dataset.scriptId = scriptId;
+                        el.style.pointerEvents = 'auto'; // Re-enable pointer events for the element
+                        layerEl.appendChild(el);
                         return el.id;
                     }
                     return null;
                 },
-                createImage: (url, styles = "") => {
-                    const id = `tory-img-${Date.now()}`;
+                createImage: (url, styles = "", layer = 'map') => {
+                    const layerEl = document.getElementById(layer === 'hud' ? 'tory-hud-layer' : 'tory-ui-layer');
+                    if (!layerEl) return null;
+
+                    const id = `tory-img-${Date.now()}-${Math.floor(Math.random()*1000)}`;
                     const img = document.createElement('img');
                     img.id = id;
                     img.src = url;
                     img.style.cssText = styles;
                     img.classList.add('tory-ui-element');
-                    container.appendChild(img);
+                    img.dataset.scriptId = scriptId;
+                    img.style.pointerEvents = 'auto';
+                    layerEl.appendChild(img);
                     return id;
                 },
-                createGif: (url, styles = "") => {
-                    return ToryScript.api().createImage(url, styles); // Same as image
+                createGif: (url, styles = "", layer = 'map') => {
+                    return ToryScript.api(scriptId, customLog).createImage(url, styles, layer);
+                },
+                removeUI: (id) => {
+                    const el = document.getElementById(id);
+                    if (el && el.classList.contains('tory-ui-element')) {
+                        el.remove();
+                        return true;
+                    }
+                    return false;
+                },
+                clearUI: (all = false) => {
+                    const elements = document.querySelectorAll(all ? '.tory-ui-element' : `.tory-ui-element[data-script-id="${scriptId}"]`);
+                    elements.forEach(el => el.remove());
                 },
                 createAudio: (url, options = {}) => {
                     const a = new Audio(url);
@@ -2800,14 +2835,24 @@ toggleExplorer();` },
                 },
                 applyStyle: (id, css) => {
                     const el = document.getElementById(id);
-                    if (el) el.style.cssText += css;
+                    if (el && (el.classList.contains('tory-ui-element') || el.id.startsWith('tory-'))) {
+                        el.style.cssText += css;
+                    } else {
+                        console.warn(`[ToryScript] applyStyle blocked for element ID: ${id}. Only Tory-created elements can be styled.`);
+                    }
                 },
                 addEvent: (id, type, toryFunc) => {
                     const el = document.getElementById(id);
-                    if (el) {
-                        el.addEventListener(type, () => {
-                            if (typeof toryFunc === 'function') toryFunc();
+                    if (el && (el.classList.contains('tory-ui-element') || el.id.startsWith('tory-'))) {
+                        el.addEventListener(type, (e) => {
+                            try {
+                                if (typeof toryFunc === 'function') toryFunc(e);
+                            } catch (err) {
+                                console.error(`[ToryScript] Event listener error [${id}:${type}]:`, err);
+                            }
                         });
+                    } else {
+                        console.warn(`[ToryScript] addEvent blocked for element ID: ${id}. Only Tory-created elements can have custom events.`);
                     }
                 },
                 random: (min, max) => Math.floor(Math.random() * (max - min + 1)) + min,
@@ -2828,7 +2873,12 @@ toggleExplorer();` },
                 state.hooks.onTick.delete(scriptId);
                 state.hooks.onCycle.delete(scriptId);
                 state.activeScripts.delete(scriptId);
-                console.log(`[ToryScript] Stopped script: ${scriptId}`);
+                
+                // Cleanup UI elements associated with this script
+                const elements = document.querySelectorAll(`.tory-ui-element[data-script-id="${scriptId}"]`);
+                elements.forEach(el => el.remove());
+                
+                console.log(`[ToryScript] Stopped script and cleaned up UI: ${scriptId}`);
             },
             run: async (code, options = {}) => {
                 const scriptId = options.id || `script-${Date.now()}`;
@@ -2879,6 +2929,10 @@ toggleExplorer();` },
                 console.log("- tory name() { ... } : Define function");
                 console.log("- tory x = 10; : Define variable");
                 console.log("- print(msg) : Log to console");
+                console.log("- html(str, [layer]) : Inject UI ('map' or 'hud')");
+                console.log("- css(id, style) : Style injected elements");
+                console.log("- removeUI(id) : Remove specific UI element");
+                console.log("- clearUI([all]) : Clear script or all UI");
                 console.log("- fill(x, y, w, h, type) : Fill area (water/land)");
                 console.log("- claim([{x, y}, ...], ownerIdx) : Batch claim tiles");
                 console.log("- player('balance', 5000) : Set player balance");
