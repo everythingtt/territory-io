@@ -1217,10 +1217,10 @@ cycle(tory() {
                                 <div class="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center text-2xl">💻</div>
                                 <div>
                                     <h3 class="text-xl font-bold text-white uppercase">Desktop EXE</h3>
-                                    <p class="text-slate-500 text-xs uppercase font-bold tracking-widest">Windows (Electron / Nativefier)</p>
+                                    <p class="text-slate-500 text-xs uppercase font-bold tracking-widest">Windows 10-11 (Electron)</p>
                                 </div>
                             </div>
-                            <p class="text-slate-400 text-sm leading-relaxed flex-1">Convert Territory.io into a desktop executable. We recommend <b>Nativefier</b> or <b>PWABuilder</b> for high compatibility with GitHub Pages.</p>
+                            <p class="text-slate-400 text-sm leading-relaxed flex-1">Convert Territory.io into a desktop executable. Optimized for high-performance on Windows 10 and 11 via the Electron runtime.</p>
                             <div class="flex gap-2">
                                 <button onclick="exportProjectBundle('desktop')" class="flex-1 bg-emerald-600 hover:bg-emerald-500 py-4 rounded-2xl font-bold text-white shadow-lg shadow-emerald-900/20 transition-all uppercase tracking-widest text-[10px]">
                                     Offline Bundle
@@ -1237,10 +1237,10 @@ cycle(tory() {
                                 <div class="w-12 h-12 bg-blue-500/20 rounded-2xl flex items-center justify-center text-2xl">📱</div>
                                 <div>
                                     <h3 class="text-xl font-bold text-white uppercase">Mobile APK</h3>
-                                    <p class="text-slate-500 text-xs uppercase font-bold tracking-widest">Android (Capacitor / TWA)</p>
+                                    <p class="text-slate-500 text-xs uppercase font-bold tracking-widest">Android 5.0+ (Capacitor)</p>
                                 </div>
                             </div>
-                            <p class="text-slate-400 text-sm leading-relaxed flex-1">Wrap the engine in a native Android container. Highly compatible with <b>Ionic Capacitor</b> or <b>Google Bubblewrap</b> via the GitHub Pages URL.</p>
+                            <p class="text-slate-400 text-sm leading-relaxed flex-1">Wrap the engine in a native Android container. Fully compatible with Android 5.0 (Lollipop) and above, including the latest Android 14+.</p>
                             <div class="flex gap-2">
                                 <button onclick="exportProjectBundle('mobile')" class="flex-1 bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl font-bold text-white shadow-lg shadow-blue-900/20 transition-all uppercase tracking-widest text-[10px]">
                                     Offline Bundle
@@ -7703,7 +7703,7 @@ cycle(tory() {
             showBuildModal(baseTarget);
 
             const steps = [
-                { id: 'analyze', msg: 'Analyzing Project Structure...', progress: 25 },
+                { id: 'analyze', msg: `Verifying ${isDesktop ? 'Windows 10-11' : 'Android 5.0+'} Compatibility...`, progress: 25 },
                 { id: 'compile', msg: 'Compiling JavaScript & Assets...', progress: 50 },
                 { id: 'package', msg: 'Packaging Native Container...', progress: 75 },
                 { id: 'sign', msg: 'Signing Application Binary...', progress: 100 }
