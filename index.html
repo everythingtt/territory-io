@@ -1164,6 +1164,18 @@ tory setupMap() {      // Function definition
                                     <code class="text-cyan-400 block mb-1">audio(url, opts)</code>
                                     <span class="text-[10px] text-slate-500 uppercase">MP3/Sound FX</span>
                                 </div>
+                                <div class="bg-black/30 p-4 rounded-xl border border-white/5 text-center">
+                                    <code class="text-cyan-400 block mb-1">injectCSS(css)</code>
+                                    <span class="text-[10px] text-slate-500 uppercase">Global Styles</span>
+                                </div>
+                                <div class="bg-black/30 p-4 rounded-xl border border-white/5 text-center">
+                                    <code class="text-cyan-400 block mb-1">injectJS(code)</code>
+                                    <span class="text-[10px] text-slate-500 uppercase">Raw Scripting</span>
+                                </div>
+                                <div class="bg-black/30 p-4 rounded-xl border border-white/5 text-center">
+                                    <code class="text-cyan-400 block mb-1">update()</code>
+                                    <span class="text-[10px] text-slate-500 uppercase">Live UI Refresh</span>
+                                </div>
                             </div>
 
                             <div class="bg-blue-500/5 p-4 rounded-2xl border border-blue-500/20">
@@ -2571,6 +2583,9 @@ toggleExplorer();` },
                 { pattern: /\bevent\s*\(/g, replacement: 'addEvent(' },
                 { pattern: /\bremoveUI\s*\(/g, replacement: 'removeUI(' },
                 { pattern: /\bclearUI\s*\(/g, replacement: 'clearUI(' },
+                { pattern: /\binjectCSS\s*\(/g, replacement: 'injectCSS(' },
+                { pattern: /\binjectJS\s*\(/g, replacement: 'injectJS(' },
+                { pattern: /\bupdate\s*\(\)/g, replacement: 'update()' },
                 { pattern: /\bimage\s*\(/g, replacement: 'createImage(' },
                 { pattern: /\bgif\s*\(/g, replacement: 'createGif(' },
                 { pattern: /\baudio\s*\(/g, replacement: 'createAudio(' },
@@ -2816,10 +2831,40 @@ toggleExplorer();` },
                 },
                 _isToryEl: (el) => {
                     if (!el) return false;
+                    const moddableClasses = ['header', 'btn-group', 'profiler-row', 'leaderboard-item', 'modal-content'];
+                    const moddableIds = ['cycle-box', 'top-bar', 'side-panel', 'user-territory-label'];
+                    
                     return el.classList.contains('tory-ui-element') || 
                            el.id.startsWith('tory-') || 
-                           el.id.startsWith('btn-') || // Allow game buttons
-                           el.closest('#sandbox-engine') !== null; // Allow anything inside engine
+                           el.id.startsWith('btn-') || 
+                           moddableClasses.some(c => el.classList.contains(c)) ||
+                           moddableIds.includes(el.id) ||
+                           el.closest('#sandbox-engine') !== null ||
+                           el.closest('#viewport') !== null; // Allow most things in viewport
+                },
+                injectCSS: (css) => {
+                    const style = document.createElement('style');
+                    style.id = `tory-style-${Date.now()}-${Math.floor(Math.random()*1000)}`;
+                    style.classList.add('tory-ui-element');
+                    style.dataset.scriptId = scriptId;
+                    style.innerHTML = css;
+                    document.head.appendChild(style);
+                    return style.id;
+                },
+                injectJS: (code) => {
+                    const script = document.createElement('script');
+                    script.id = `tory-js-${Date.now()}-${Math.floor(Math.random()*1000)}`;
+                    script.classList.add('tory-ui-element');
+                    script.dataset.scriptId = scriptId;
+                    script.innerHTML = code;
+                    document.body.appendChild(script);
+                    return script.id;
+                },
+                update: () => {
+                    updateUI(state.lastMaxBalance);
+                    updateLabel();
+                    if (state.engine.initialized) drawEngineMap();
+                    else drawRegion(0, 0, CONFIG.COLS-1, CONFIG.ROWS-1);
                 },
                 createUI: (html, layer = 'map') => {
                     const layerEl = document.getElementById(layer === 'hud' ? 'tory-hud-layer' : 'tory-ui-layer');
@@ -2979,8 +3024,11 @@ toggleExplorer();` },
                 console.log("- print(msg) : Log to console");
                 console.log("- html(str, [layer]) : Inject UI ('map' or 'hud')");
                 console.log("- css(id, style) : Style injected elements");
-                console.log("- removeUI(id) : Remove specific UI element");
+                console.log("- removeUI(selector) : Remove specific element");
                 console.log("- clearUI([all]) : Clear script or all UI");
+                console.log("- injectCSS(css) : Add global document styles");
+                console.log("- injectJS(code) : Run raw JavaScript in body");
+                console.log("- update() : Force refresh all UI components");
                 console.log("- fill(x, y, w, h, type) : Fill area (water/land)");
                 console.log("- claim([{x, y}, ...], ownerIdx) : Batch claim tiles");
                 console.log("- player('balance', 5000) : Set player balance");
