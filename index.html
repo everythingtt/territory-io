@@ -12,6 +12,7 @@
         .tory-ui-element {
             pointer-events: auto;
             user-select: none;
+            -webkit-user-select: none;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .tory-ui-element:hover {
@@ -19,6 +20,20 @@
         }
         .tory-ui-element:active {
             transform: scale(0.98);
+        }
+        #tory-ui-layer {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 50;
+        }
+        #tory-hud-layer {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: 10000;
         }
         body {
             background-color: #020617;
@@ -398,7 +413,7 @@
                     <h3 id="workspace-file-title" class="text-xl font-black text-white uppercase tracking-tighter italic">File Viewer</h3>
                     <p id="workspace-file-path" class="text-[10px] text-slate-500 font-mono"></p>
                 </div>
-                <button onclick="document.getElementById('workspace-file-modal').classList.add('hidden')" class="text-slate-500 hover:text-white transition-colors">
+                <button onclick="document.getElementById('workspace-file-modal').classList.add('hidden')" title="Close Viewer" class="text-slate-500 hover:text-white transition-colors">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
@@ -1785,9 +1800,9 @@ cycle(tory() {
                 <div id="label-name" class="text-white font-bold text-[12px] uppercase"></div>
                 <div id="label-balance" class="text-yellow-400 font-mono text-[14px] font-bold"></div>
             </div>
-            <div id="tory-ui-layer" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:50;"></div>
+            <div id="tory-ui-layer"></div>
         </div>
-        <div id="tory-hud-layer" style="position:fixed; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index:10000;"></div>
+        <div id="tory-hud-layer"></div>
     </div>
 
     <script>
@@ -1892,6 +1907,7 @@ tory toggleExplorer() {
     };
     
     tory vfsRoot = document.getElementById('live-vfs-root');
+    // Use the engine object from the ToryScript API scope
     vfsRoot.appendChild(renderNode(engine.vfs.root, 0));
     
     setTimeout(tory() { sidebar.style.transform = "translateX(0)"; }, 10);
