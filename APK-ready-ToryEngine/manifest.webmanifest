@@ -1,0 +1,16 @@
+{
+  "name": "ToryEngine Studio",
+  "short_name": "ToryEngine",
+  "description": "Professional IDE Studio for Territory.io Map Developers",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#3b82f6",
+  "icons": [
+    {
+      "src": "assets/rocket.gif",
+      "sizes": "192x192",
+      "type": "image/gif"
+    }
+  ]
+}
