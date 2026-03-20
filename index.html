@@ -1293,6 +1293,7 @@ tory setupMap() {      // Function definition
                                     <ul class="text-slate-500 text-xs space-y-2 list-disc list-inside">
                                         <li>Hierarchical directory navigation.</li>
                                         <li>Context-aware file viewer modal.</li>
+                                        <li>Real-time <code class="text-blue-400">.live</code> memory inspection.</li>
                                         <li>Seamless compatibility with ToryEngine Studio.</li>
                                         <li>Persistent storage across game reloads.</li>
                                     </ul>
@@ -1301,6 +1302,35 @@ tory setupMap() {      // Function definition
                                     <div class="text-blue-400 font-black text-xs uppercase mb-4 tracking-widest">Access Command</div>
                                     <code class="text-white text-[10px] font-mono bg-blue-600/20 px-3 py-2 rounded-lg border border-blue-500/30 block mb-4 italic">toggleExplorer()</code>
                                     <p class="text-slate-500 text-[9px]">Execute this command via <span class="text-blue-400">ToryScript.exec()</span> in the browser console.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Memory & .live Files -->
+                    <section class="space-y-6 pb-10">
+                        <h3 class="text-xl font-bold text-emerald-400 uppercase tracking-widest flex items-center gap-3">
+                            <span class="w-8 h-8 bg-emerald-400/20 rounded-lg flex items-center justify-center text-sm">08</span>
+                            Memory & .live Files
+                        </h3>
+                        <div class="bg-slate-800/30 p-8 rounded-3xl border border-white/5 space-y-6">
+                            <p class="text-slate-400 text-sm leading-relaxed">The <code class="text-emerald-400">live_memory</code> folder provides a window into the engine's internal state. These virtual files allow you to inspect the raw data buffers used for rendering and logic.</p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="bg-black/30 p-4 rounded-xl border border-white/5">
+                                    <div class="text-emerald-400 font-bold text-xs mb-1 uppercase">tileTypes.live</div>
+                                    <p class="text-slate-500 text-[10px]">Raw terrain data (Land, Water, Cities, Capitals).</p>
+                                </div>
+                                <div class="bg-black/30 p-4 rounded-xl border border-white/5">
+                                    <div class="text-emerald-400 font-bold text-xs mb-1 uppercase">tileOwners.live</div>
+                                    <p class="text-slate-500 text-[10px]">Real-time ownership map (IDs 0 to N).</p>
+                                </div>
+                                <div class="bg-black/30 p-4 rounded-xl border border-white/5">
+                                    <div class="text-emerald-400 font-bold text-xs mb-1 uppercase">cityLevels.live</div>
+                                    <p class="text-slate-500 text-[10px]">Current development stages (hj0 to hj8).</p>
+                                </div>
+                                <div class="bg-black/30 p-4 rounded-xl border border-white/5">
+                                    <div class="text-emerald-400 font-bold text-xs mb-1 uppercase">tileFlags.live</div>
+                                    <p class="text-slate-500 text-[10px]">Binary bitmasks for borders and dams.</p>
                                 </div>
                             </div>
                         </div>
