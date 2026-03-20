@@ -1300,8 +1300,8 @@ tory setupMap() {      // Function definition
                                 </div>
                                 <div class="w-full md:w-64 bg-black/40 p-6 rounded-2xl border border-blue-500/20 text-center">
                                     <div class="text-blue-400 font-black text-xs uppercase mb-4 tracking-widest">Access Command</div>
-                                    <code class="text-white text-[10px] font-mono bg-blue-600/20 px-3 py-2 rounded-lg border border-blue-500/30 block mb-4 italic">toggleExplorer()</code>
-                                    <p class="text-slate-500 text-[9px]">Execute this command via <span class="text-blue-400">ToryScript.exec()</span> in the browser console.</p>
+                                    <code class="text-white text-[10px] font-mono bg-blue-600/20 px-3 py-2 rounded-lg border border-blue-500/30 block mb-4 italic">ToryScript.exec('toggleExplorer();')</code>
+                                    <p class="text-slate-500 text-[9px]">Execute this command in the browser console to toggle the workspace sidebar.</p>
                                 </div>
                             </div>
                         </div>
@@ -2188,166 +2188,6 @@ tory setupEditor() {
 
 setupEditor();` },
                             { id: 's2', name: 'archipelago.tory', type: 'script', content: '// ToryScript Archipelago Generator\nreset();\nseed(0.2, 0.5);\n\n// Add some manual islands\nisland(100, 100, 20, "land");\nisland(284, 150, 15, "land");\n\n// Add cities\ncity(100, 100);\ncity(284, 150);\n\nhome(100, 100);\nprint("Archipelago Generated!");' },
-                            { id: 's3', name: 'workspace_explorer.tory', type: 'script', content: `// Advanced Live Workspace Explorer v3.2
-// Must be executed via console: ToryScript.exec('toggleExplorer()')
-
-tory toggleExplorer() {
-    if (engine.initialized) {
-        print("ToryScript Explorer: Disabled in Engine Mode. Use built-in Asset Explorer tab.");
-        return;
-    }
-
-    tory id = "tory-live-sidebar";
-    tory existing = document.getElementById(id);
-    if (existing) {
-        existing.style.transform = "translateX(100%)";
-        setTimeout(tory() { existing.remove(); }, 300);
-        return;
-    }
-
-    tory sidebar = document.createElement("div");
-    sidebar.id = id;
-    sidebar.style.cssText = "position:fixed;right:0;top:0;width:350px;height:100vh;background:rgba(2,6,23,0.95);backdrop-filter:blur(20px);border-left:1px solid rgba(255,255,255,0.1);z-index:9999;padding:30px;color:white;font-family:'Inter',sans-serif;overflow-y:auto;transform:translateX(100%);transition:transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);box-shadow:-20px 0 50px rgba(0,0,0,0.5)";
-    
-    tory html = "<h2 style='margin-bottom:25px;font-size:18px;font-weight:900;color:#3b82f6;letter-spacing:-0.05em;text-transform:uppercase;font-style:italic'>Live Map Workspace</h2>";
-    html += "<div style='font-size:10px;color:#64748b;font-weight:900;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:15px'>Project Directories</div>";
-    html += "<div id='live-vfs-root' style='display:flex;flex-direction:column;gap:4px'></div>";
-    
-    sidebar.innerHTML = html;
-    document.body.appendChild(sidebar);
-    
-    tory renderNode = tory(node, depth) {
-        tory container = document.createElement("div");
-        container.style.paddingLeft = (depth * 15) + "px";
-        
-        tory item = document.createElement("div");
-        item.style.cssText = "display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;cursor:pointer;transition:all 0.2s;font-size:12px;color:#cbd5e1";
-        item.onmouseover = tory() { item.style.background = "rgba(255,255,255,0.05)"; item.style.color = "white"; };
-        item.onmouseout = tory() { item.style.background = "transparent"; item.style.color = "#cbd5e1"; };
-        
-        tory icon = node.type === 'folder' ? "📁" : (node.type === 'live' ? "⚡" : "📄");
-        item.innerHTML = "<span>" + icon + "</span><span style='flex:1'>" + node.name + "</span>";
-        
-        if (node.type === 'script' || node.type === 'config' || node.type === 'live') {
-            item.onclick = tory(e) {
-                e.preventDefault();
-                tory modal = document.getElementById('workspace-file-modal');
-                document.getElementById('workspace-file-title').innerText = node.name;
-                document.getElementById('workspace-file-path').innerText = node.type === 'live' ? "MEM://" + node.name : "VFS://" + node.name;
-                
-                tory content = "";
-                if (node.type === 'live') {
-                    tory buffer = gamestate[node.bufferKey];
-                    if (buffer) {
-                        content = "// Real-time Game Memory: " + node.name + "\\n";
-                        content += "// Length: " + buffer.length + " bytes\\n\\n";
-                        tory snippet = Array.from(buffer.slice(0, 1000)).join(", ");
-                        content += "Buffer Data (Snippet):\\n[" + snippet + "...]";
-                    } else {
-                        content = "Error: Buffer not found in state.";
-                    }
-                } else {
-                    // Execute function if it's a dynamic node
-                    content = typeof node.content === 'function' ? node.content() : node.content;
-                }
-                
-                document.getElementById('workspace-file-content').innerText = content;
-                modal.classList.remove('hidden');
-            };
-        }
-        
-        container.appendChild(item);
-        
-        if (node.children) {
-            node.children.forEach(tory(child) {
-                container.appendChild(renderNode(child, depth + 1));
-            });
-        }
-        
-        return container;
-    };
-    
-    // Generate Modular Live Map VFS
-    tory liveRoot = {
-        name: 'root',
-        type: 'folder',
-        children: [
-            {
-                name: 'terrain',
-                type: 'folder',
-                children: [
-                    { 
-                        name: 'generation.tory', 
-                        type: 'script', 
-                        content: tory() {
-                            tory p = gamestate.genParams || { scale: 0.1, threshold: 0.45 };
-                            return "// Modular Terrain Generator\\nreset();\\nseed(" + p.scale + ", " + p.threshold + ");\\nupdate();\\nprint('Terrain Reconstructed.');";
-                        }
-                    },
-                    {
-                        name: 'map_data.live',
-                        type: 'live',
-                        bufferKey: 'tileTypes'
-                    }
-                ]
-            },
-            {
-                name: 'entities',
-                type: 'folder',
-                children: [
-                    {
-                        name: 'players.tory',
-                        type: 'script',
-                        content: tory() {
-                            tory s = "// Entity Configuration\\n";
-                            s += "playerName('" + gamestate.username + "');\\n";
-                            s += "maxEntities(" + gamestate.entities.length + ");\\n";
-                            s += "difficulty('" + gamestate.spawnSettings.difficulty + "');\\n";
-                            s += "gameMode('" + gamestate.gameMode + "');\\n";
-                            s += "print('Entity Data Exported.');";
-                            return s;
-                        }
-                    },
-                    {
-                        name: 'ownership.live',
-                        type: 'live',
-                        bufferKey: 'tileOwners'
-                    }
-                ]
-            },
-            {
-                name: 'configs',
-                type: 'folder',
-                children: [
-                    {
-                        name: 'game.toryconfig',
-                        type: 'config',
-                        content: tory() {
-                            return JSON.stringify(gamestate.spawnSettings, null, 2);
-                        }
-                    },
-                    {
-                        name: 'internal.live',
-                        type: 'live',
-                        bufferKey: 'tileFlags'
-                    }
-                ]
-            }
-        ]
-    };
-    
-    tory vfsRoot = document.getElementById('live-vfs-root');
-    liveRoot.children.forEach(tory(child) {
-        vfsRoot.appendChild(renderNode(child, 0));
-    });
-    
-    setTimeout(tory() { sidebar.style.transform = "translateX(0)"; }, 10);
-    print("Modular Live Workspace Generated.");
-}
-
-// Export to window for global access via ToryScript.exec()
-window.toggleExplorer = toggleExplorer;
-toggleExplorer();` },
                             { id: 's4', name: 'live_mod.tory', type: 'script', content: '// Live Mod Example\n// Increases player balance every cycle and logs every tick\n\ntick(tory() {\n    // This runs every second\n    // print("Tick..."); \n});\n\ncycle(tory() {\n    // This runs every 10 seconds\n    tory current = player("balance");\n    player("balance", current + 1000);\n    print("Cycle Bonus: +$1000");\n});\n\nprint("Live Mod Active!");' },
                             { id: 'f1_bots', name: 'bots', type: 'folder', children: [
                                 { id: 's_aggro', name: 'aggressive.tory', type: 'script', content: '// Aggressive Bot Logic\ntory onBotTick(botIdx) {\n    tory b = bot(botIdx);\n    if (b.balance > 500) {\n        // Expansion logic\n    }\n}' }
@@ -2368,6 +2208,144 @@ toggleExplorer();` },
                 currentPath: '/root/scripts'
             };
         }
+
+        function toggleExplorer() {
+            if (state.engine.initialized) {
+                console.log("ToryScript Explorer: Disabled in Engine Mode. Use built-in Asset Explorer tab.");
+                return;
+            }
+
+            const id = "tory-live-sidebar";
+            const existing = document.getElementById(id);
+            if (existing) {
+                existing.style.transform = "translateX(100%)";
+                setTimeout(() => { existing.remove(); }, 300);
+                return;
+            }
+
+            const sidebar = document.createElement("div");
+            sidebar.id = id;
+            sidebar.style.cssText = "position:fixed;right:0;top:0;width:350px;height:100vh;background:rgba(2,6,23,0.95);backdrop-filter:blur(20px);border-left:1px solid rgba(255,255,255,0.1);z-index:9999;padding:30px;color:white;font-family:'Inter',sans-serif;overflow-y:auto;transform:translateX(100%);transition:transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);box-shadow:-20px 0 50px rgba(0,0,0,0.5)";
+            
+            let html = "<h2 style='margin-bottom:25px;font-size:18px;font-weight:900;color:#3b82f6;letter-spacing:-0.05em;text-transform:uppercase;font-style:italic'>Live Map Workspace</h2>";
+            html += "<div style='font-size:10px;color:#64748b;font-weight:900;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:15px'>Project Directories</div>";
+            html += "<div id='live-vfs-root' style='display:flex;flex-direction:column;gap:4px'></div>";
+            
+            sidebar.innerHTML = html;
+            document.body.appendChild(sidebar);
+            
+            const renderNode = (node, depth) => {
+                const container = document.createElement("div");
+                container.style.paddingLeft = (depth * 15) + "px";
+                
+                const item = document.createElement("div");
+                item.style.cssText = "display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;cursor:pointer;transition:all 0.2s;font-size:12px;color:#cbd5e1";
+                item.onmouseover = () => { item.style.background = "rgba(255,255,255,0.05)"; item.style.color = "white"; };
+                item.onmouseout = () => { item.style.background = "transparent"; item.style.color = "#cbd5e1"; };
+                
+                const icon = node.type === 'folder' ? "📁" : (node.type === 'live' ? "⚡" : "📄");
+                item.innerHTML = `<span>${icon}</span><span style='flex:1'>${node.name}</span>`;
+                
+                if (node.type === 'script' || node.type === 'config' || node.type === 'live') {
+                    item.onclick = (e) => {
+                        e.preventDefault();
+                        const modal = document.getElementById('workspace-file-modal');
+                        document.getElementById('workspace-file-title').innerText = node.name;
+                        document.getElementById('workspace-file-path').innerText = node.type === 'live' ? "MEM://" + node.name : "VFS://" + node.name;
+                        
+                        let content = "";
+                        if (node.type === 'live') {
+                            const buffer = state[node.bufferKey];
+                            if (buffer) {
+                                content = `// Real-time Game Memory: ${node.name}\n// Length: ${buffer.length} bytes\n\n`;
+                                const snippet = Array.from(buffer.slice(0, 1000)).join(", ");
+                                content += `Buffer Data (Snippet):\n[${snippet}...]`;
+                            } else {
+                                content = "Error: Buffer not found in state.";
+                            }
+                        } else {
+                            content = typeof node.content === 'function' ? node.content() : node.content;
+                        }
+                        
+                        document.getElementById('workspace-file-content').innerText = content;
+                        modal.classList.remove('hidden');
+                    };
+                }
+                
+                container.appendChild(item);
+                
+                if (node.children) {
+                    node.children.forEach((child) => {
+                        container.appendChild(renderNode(child, depth + 1));
+                    });
+                }
+                
+                return container;
+            };
+            
+            const liveRoot = {
+                name: 'root',
+                type: 'folder',
+                children: [
+                    {
+                        name: 'terrain',
+                        type: 'folder',
+                        children: [
+                            { 
+                                name: 'generation.tory', 
+                                type: 'script', 
+                                content: () => {
+                                    const p = state.genParams || { scale: 0.1, threshold: 0.45 };
+                                    return `// Modular Terrain Generator\nreset();\nseed(${p.scale}, ${p.threshold});\nupdate();\nprint('Terrain Reconstructed.');`;
+                                }
+                            },
+                            { name: 'map_data.live', type: 'live', bufferKey: 'tileTypes' }
+                        ]
+                    },
+                    {
+                        name: 'entities',
+                        type: 'folder',
+                        children: [
+                            {
+                                name: 'players.tory',
+                                type: 'script',
+                                content: () => {
+                                    let s = "// Entity Configuration\n";
+                                    s += `playerName('${state.username}');\n`;
+                                    s += `maxEntities(${state.entities.length});\n`;
+                                    s += `difficulty('${state.spawnSettings.difficulty}');\n`;
+                                    s += `gameMode('${state.gameMode}');\n`;
+                                    s += "print('Entity Data Exported.');";
+                                    return s;
+                                }
+                            },
+                            { name: 'ownership.live', type: 'live', bufferKey: 'tileOwners' }
+                        ]
+                    },
+                    {
+                        name: 'configs',
+                        type: 'folder',
+                        children: [
+                            {
+                                name: 'game.toryconfig',
+                                type: 'config',
+                                content: () => JSON.stringify(state.spawnSettings, null, 2)
+                            },
+                            { name: 'internal.live', type: 'live', bufferKey: 'tileFlags' }
+                        ]
+                    }
+                ]
+            };
+            
+            const vfsRoot = document.getElementById('live-vfs-root');
+            liveRoot.children.forEach((child) => {
+                vfsRoot.appendChild(renderNode(child, 0));
+            });
+            
+            setTimeout(() => { sidebar.style.transform = "translateX(0)"; }, 10);
+            console.log("[ToryScript] Modular Live Workspace Generated.");
+        }
+        window.toggleExplorer = toggleExplorer;
 
         const state = {
             version: '3.2.1', // Current version tag (Multimedia & Map Editor)
@@ -3623,6 +3601,13 @@ print("Iron Fortress Blueprint Deployed.");`
                         handle: a
                     };
                 },
+                toggleExplorer: () => {
+                    if (typeof window.toggleExplorer === 'function') {
+                        window.toggleExplorer();
+                    } else {
+                        console.error("[ToryScript] toggleExplorer core function not found.");
+                    }
+                },
                 applyStyle: (selector, css) => {
                     const el = ToryScript.api(scriptId, customLog)._resolveEl(selector);
                     if (el && ToryScript.api(scriptId, customLog)._isToryEl(el)) {
@@ -3643,6 +3628,13 @@ print("Iron Fortress Blueprint Deployed.");`
                         });
                     } else {
                         console.warn(`[ToryScript] addEvent blocked or element not found for: ${selector}.`);
+                    }
+                },
+                toggleExplorer: () => {
+                    if (typeof window.toggleExplorer === 'function') {
+                        window.toggleExplorer();
+                    } else {
+                        console.error("[ToryScript] toggleExplorer not found in window scope.");
                     }
                 },
                 random: (min, max) => Math.floor(Math.random() * (max - min + 1)) + min,
@@ -3772,7 +3764,7 @@ print("Iron Fortress Blueprint Deployed.");`
                 console.log("- tick(tory() { ... }) : Add onTick hook");
                 console.log("- cycle(tory() { ... }) : Add onCycle hook");
                 console.log("- toggleExplorer() : Open Live Workspace Explorer");
-                console.log("Example: ToryScript.exec('toggleExplorer()')");
+                console.log("Example: ToryScript.exec('toggleExplorer();')");
             }
         };
         window.ToryScript = ToryScript; // Expose to global scope
