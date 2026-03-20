@@ -902,7 +902,7 @@
             <div class="flex items-center gap-4">
                 <div class="flex items-center gap-3">
                     <h2 class="text-xl font-black text-amber-400 italic uppercase tracking-tight">ToryEngine Studio</h2>
-                    <span id="engine-version-tag" class="px-2 py-0.5 rounded-md border border-amber-400/30 bg-amber-500/10 text-[9px] font-bold text-amber-300 uppercase tracking-widest">v3.2.0</span>
+                    <span id="engine-version-tag" class="px-2 py-0.5 rounded-md border border-amber-400/30 bg-amber-500/10 text-[9px] font-bold text-amber-300 uppercase tracking-widest">v3.2.1</span>
                 </div>
                 <div class="h-6 w-[1px] bg-slate-800"></div>
                 <div class="flex gap-2">
@@ -2174,7 +2174,7 @@ toggleExplorer();` },
         }
 
         const state = {
-            version: '3.2.0', // Current version tag (Multimedia & Map Editor)
+            version: '3.2.1', // Current version tag (Multimedia & Map Editor)
             username: '',
             playerId: 'pr' + Math.floor(Math.random() * 90 + 10), // Unique 2-digit ID
             initialized: false, // Prevent multiple initializations
@@ -3876,6 +3876,14 @@ toggleExplorer();` },
                     const match = text.match(/version:\s*'([^']+)'/);
                     if (match && match[1] !== state.version) {
                         document.getElementById('update-modal').classList.remove('hidden');
+                        
+                        // Force SW update check
+                        if ('serviceWorker' in navigator) {
+                            navigator.serviceWorker.getRegistration().then(reg => {
+                                if (reg) reg.update();
+                            });
+                        }
+                        
                         return true; // Stop checking once update is found
                     }
                 } catch (e) {
