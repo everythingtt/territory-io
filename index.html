@@ -921,7 +921,8 @@
                     <div id="engine-status-brush" class="px-2 py-1 rounded-md border border-slate-700 bg-slate-900 text-[9px] text-cyan-300 font-mono uppercase">Brush: water</div>
                     <div id="engine-status-file" class="px-2 py-1 rounded-md border border-slate-700 bg-slate-900 text-[9px] text-emerald-300 font-mono uppercase">File: main.tory</div>
                 </div>
-                <button type="button" onclick="testEngineMap()" class="bg-blue-600 hover:bg-blue-500 px-4 py-1.5 rounded-lg text-white text-[10px] font-bold uppercase border border-blue-400/40 transition-colors" title="Test current map in-game">Test Map</button>
+                <button type="button" onclick="testEngineMap()" id="btn-test-map" class="bg-blue-600 hover:bg-blue-500 px-4 py-1.5 rounded-lg text-white text-[10px] font-bold uppercase border border-blue-400/40 transition-colors" title="Test current map in-game">Test Map</button>
+                <button type="button" onclick="endEngineGame()" id="btn-end-game" class="hidden bg-red-600 hover:bg-red-500 px-4 py-1.5 rounded-lg text-white text-[10px] font-bold uppercase border border-red-400/40 transition-colors" title="End game and return to editor">End Game</button>
                 <button type="button" onclick="exportToryMap()" class="bg-purple-600 hover:bg-purple-500 px-4 py-1.5 rounded-lg text-white text-[10px] font-bold uppercase border border-purple-400/40 transition-colors" title="Export entire workspace as .torymap">Export Workspace</button>
                 <button type="button" onclick="importToryMapTrigger()" class="bg-slate-700 hover:bg-slate-600 px-4 py-1.5 rounded-lg text-slate-200 text-[10px] font-bold uppercase border border-slate-600 transition-colors" title="Import .torymap workspace">Import Workspace</button>
                 <button type="button" id="engine-fullscreen-btn" onclick="toggleEngineFullscreen()" class="bg-slate-800 hover:bg-slate-700 px-4 py-1.5 rounded-lg text-slate-300 text-[10px] font-bold uppercase border border-slate-700 transition-colors" title="Toggle Fullscreen">Fullscreen</button>
@@ -2315,8 +2316,26 @@ toggleExplorer();` },
         }
 
         function testEngineMap() {
+            // Check if game is already running in engine
+            if (state.initialized) {
+                if (!confirm("A game is already running. Restart with current workspace?")) return;
+                // We'll reload to clear everything properly for now, but 
+                // we'll pass a flag to auto-open the engine and start.
+                localStorage.setItem('custom_map_to_play', JSON.stringify({
+                    vfs: state.engine.vfs,
+                    mapData: {
+                        tileTypes: Array.from(state.engine.mapData.tileTypes),
+                        cityIndices: Array.from(state.engine.mapData.tileTypes).reduce((acc, t, i) => t === 5 ? [...acc, i] : acc, []),
+                        capitalIdx: Array.from(state.engine.mapData.tileTypes).indexOf(6)
+                    },
+                    autoTest: true
+                }));
+                location.reload();
+                return;
+            }
+
             const cityIndices = [];
-            let capitalIdx = null;
+            let capitalIdx = -1;
             state.engine.mapData.tileTypes.forEach((t, i) => {
                 if (t === 5) cityIndices.push(i);
                 if (t === 6) capitalIdx = i;
@@ -2334,7 +2353,27 @@ toggleExplorer();` },
                 timestamp: Date.now()
             };
 
+            // Switch UI to test mode
+            document.getElementById('btn-test-map').classList.add('hidden');
+            document.getElementById('btn-end-game').classList.remove('hidden');
+            
+            // In-engine test: We need to hide the editor UI and show the game UI
+            // but keep the sandbox-engine modal open.
+            // We'll move the game viewport inside the engine preview area.
+            const previewArea = document.getElementById('engine-viewport');
+            const gameViewport = document.getElementById('viewport');
+            previewArea.appendChild(gameViewport);
+            
+            // Ensure UI layer is visible
+            document.getElementById('ui').classList.remove('hidden');
+            
             applyMapDataToGame(workspace);
+        }
+
+        function endEngineGame() {
+            if (confirm("End current test session?")) {
+                location.reload(); // Simplest way to purge all state/loops
+            }
         }
 
         function closeSandboxEngine() {
@@ -2862,6 +2901,12 @@ toggleExplorer();` },
                 { pattern: /\bgif\s*\(/g, replacement: 'createGif(' },
                 { pattern: /\baudio\s*\(/g, replacement: 'createAudio(' },
                 { pattern: /\bconfig\s*\(/g, replacement: 'gameConfig(' },
+                { pattern: /\bmaxEntities\s*\(/g, replacement: 'maxEntities(' },
+                { pattern: /\bgameMode\s*\(/g, replacement: 'gameMode(' },
+                { pattern: /\bspawnType\s*\(/g, replacement: 'spawnType(' },
+                { pattern: /\bdifficulty\s*\(/g, replacement: 'difficulty(' },
+                { pattern: /\bplayerName\s*\(/g, replacement: 'playerName(' },
+                { pattern: /\bbotNames\s*\(/g, replacement: 'botNames(' },
                 { pattern: /\briver\s*\(/g, replacement: 'drawRiver(' },
                 { pattern: /\bcluster\s*\(/g, replacement: 'drawCluster(' },
                 { pattern: /\btick\s*\(/g, replacement: 'onTick(' },
@@ -2970,6 +3015,12 @@ toggleExplorer();` },
                     if (val !== undefined) CONFIG[key] = val;
                     return CONFIG[key];
                 },
+                maxEntities: (val) => { if (val !== undefined) state.spawnSettings.botCount = val; return state.spawnSettings.botCount; },
+                gameMode: (val) => { if (val !== undefined) state.gameMode = val; return state.gameMode; },
+                spawnType: (val) => { if (val !== undefined) state.spawnSettings.type = val; return state.spawnSettings.type; },
+                difficulty: (val) => { if (val !== undefined) state.spawnSettings.difficulty = val; return state.spawnSettings.difficulty; },
+                playerName: (val) => { if (val !== undefined) state.username = val; return state.username; },
+                botNames: (namesArray) => { if (Array.isArray(namesArray)) state.customBotNames = namesArray; return state.customBotNames; },
                 drawRiver: (x1, y1, x2, y2, width = 1) => {
                     const dx = Math.abs(x2 - x1);
                     const dy = Math.abs(y2 - y1);
@@ -3367,9 +3418,9 @@ toggleExplorer();` },
                 try {
                     // Wrap in async function
                     const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
-                    const scriptFunc = new AsyncFunction(...Object.keys(api), compiled);
-                    
-                    if (options.onLog) options.onLog(`Executing ${scriptId}...`);
+                const scriptFunc = new AsyncFunction(...Object.keys(api), `try { ${compiled} } catch(e) { log("Runtime Error: " + e.message); throw e; }`);
+                
+                if (options.onLog) options.onLog(`Executing ${scriptId}...`);
                     
                     const result = await scriptFunc(...Object.values(api));
                     
@@ -3531,7 +3582,13 @@ toggleExplorer();` },
             if (savedMap) {
                 localStorage.removeItem('custom_map_to_play');
                 try {
-                    applyMapDataToGame(JSON.parse(savedMap));
+                    const data = JSON.parse(savedMap);
+                    if (data.autoTest) {
+                        openSandboxEngine();
+                        testEngineMap();
+                    } else {
+                        applyMapDataToGame(data);
+                    }
                 } catch (e) { console.error("Failed to load saved map", e); }
             }
         });
@@ -3730,18 +3787,20 @@ toggleExplorer();` },
                 state.entities.push(playerEntity);
 
                 // Add Bots
-                const botNamePool = [
-                    "Xenon", "Nova", "Atlas", "Vortex", "Echo", "Titan", "Luna", "Orion", "Cipher", "Apex",
-                    "Ghost", "Phantom", "Reaper", "Saber", "Viper", "Storm", "Blaze", "Frost", "Shadow", "Rogue",
-                    "Alpha", "Omega", "Delta", "Sigma", "Zeta", "Aegis", "Bastion", "Sentinel", "Warden", "Keeper",
-                    "Vector", "Matrix", "Vertex", "Pixel", "Binary", "Logic", "Cortex", "Neural", "Synapse", "Link",
-                    "Solar", "Stellar", "Cosmos", "Nebula", "Galaxy", "Void", "Abyss", "Zenith", "Horizon", "Edge",
-                    "Raptor", "Falcon", "Eagle", "Hawk", "Wolf", "Tiger", "Lion", "Bear", "Shark", "Orca",
-                    "Blade", "Bolt", "Pulse", "Spark", "Flash", "Turbo", "Nitro", "Gear", "Core", "Flux",
-                    "Onyx", "Jade", "Ruby", "Amber", "Quartz", "Flint", "Steel", "Iron", "Bronze", "Gold",
-                    "Drift", "Shift", "Glide", "Slide", "Jump", "Dash", "Rush", "Snap", "Click", "Tick",
-                    "Zero", "One", "Prime", "Elite", "Grand", "Master", "Lord", "King", "Duke", "Ace"
-                ];
+                const botNamePool = state.customBotNames && state.customBotNames.length > 0 
+                    ? [...state.customBotNames]
+                    : [
+                        "Xenon", "Nova", "Atlas", "Vortex", "Echo", "Titan", "Luna", "Orion", "Cipher", "Apex",
+                        "Ghost", "Phantom", "Reaper", "Saber", "Viper", "Storm", "Blaze", "Frost", "Shadow", "Rogue",
+                        "Alpha", "Omega", "Delta", "Sigma", "Zeta", "Aegis", "Bastion", "Sentinel", "Warden", "Keeper",
+                        "Vector", "Matrix", "Vertex", "Pixel", "Binary", "Logic", "Cortex", "Neural", "Synapse", "Link",
+                        "Solar", "Stellar", "Cosmos", "Nebula", "Galaxy", "Void", "Abyss", "Zenith", "Horizon", "Edge",
+                        "Raptor", "Falcon", "Eagle", "Hawk", "Wolf", "Tiger", "Lion", "Bear", "Shark", "Orca",
+                        "Blade", "Bolt", "Pulse", "Spark", "Flash", "Turbo", "Nitro", "Gear", "Core", "Flux",
+                        "Onyx", "Jade", "Ruby", "Amber", "Quartz", "Flint", "Steel", "Iron", "Bronze", "Gold",
+                        "Drift", "Shift", "Glide", "Slide", "Jump", "Dash", "Rush", "Snap", "Click", "Tick",
+                        "Zero", "One", "Prime", "Elite", "Grand", "Master", "Lord", "King", "Duke", "Ace"
+                    ];
                 const availableBotNames = [...botNamePool];
 
                 for (let i = 2; i < totalEntities; i++) {
@@ -3754,21 +3813,26 @@ toggleExplorer();` },
                     }
 
                     const botEntity = {
-                        id: botId,
-                        type: 'bot',
-                        difficulty: state.spawnSettings.difficulty,
-                        balance: 1000,
-                        tileCost: 10,
-                        color: `hsl(${Math.random() * 360}, 70%, 50%)`,
-                        name: botName,
-                        ownedCount: 0,
-                        cityCount: 0,
-                        capitalPos: null,
-                        collapseThreshold: Math.random() * 0.1 + 0.8,
-                        warsWon: 0,
-                        damCount: 0,
-                        ovcd: 0
-                    };
+                    id: botId,
+                    type: 'bot',
+                    difficulty: state.spawnSettings.difficulty,
+                    balance: 1000,
+                    tileCost: 10,
+                    color: `hsl(${Math.random() * 360}, 70%, 50%)`,
+                    name: botName,
+                    ownedCount: 0,
+                    cityCount: 0,
+                    capitalPos: null,
+                    collapseThreshold: Math.random() * 0.1 + 0.8,
+                    warsWon: 0,
+                    damCount: 0,
+                    ovcd: 0
+                };
+
+                // Override bot difficulty if specified in state (from ToryScript)
+                if (state.spawnSettings.difficulty) {
+                    botEntity.difficulty = state.spawnSettings.difficulty;
+                }
 
                     if (state.gameMode === 'team') {
                         const tIdx = Math.floor(Math.random() * 5);
