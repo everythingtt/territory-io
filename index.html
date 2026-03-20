@@ -1113,6 +1113,10 @@ tory setupMap() {      // Function definition
                                     <h4 class="text-white font-bold text-sm mb-2">botNames([names])</h4>
                                     <p class="text-slate-400 text-xs italic">Defines a custom pool of names for bots.</p>
                                 </div>
+                                <div>
+                                    <h4 class="text-white font-bold text-sm mb-2">mod(name, value)</h4>
+                                    <p class="text-slate-400 text-xs italic">Modifies internal engine settings at runtime (e.g., 'cycle_time', 'ai_aggression').</p>
+                                </div>
                             </div>
                         </div>
                     </section>
@@ -2610,11 +2614,36 @@ print("Iron Fortress Blueprint Deployed.");`
             };
 
             if (templates[name]) {
-                const editor = document.getElementById('tory-editor');
-                editor.value = templates[name];
+                const fileName = `${name}_blueprint.tory`;
+                const content = templates[name];
+                
+                // Try to find if this blueprint file already exists in VFS
+                let existingFile = null;
+                const findFile = (node) => {
+                    if (node.name === fileName) existingFile = node;
+                    if (node.children) node.children.forEach(findFile);
+                };
+                findFile(state.engine.vfs.root);
+
+                if (existingFile) {
+                    existingFile.content = content;
+                    vfsOpenFile(existingFile.id);
+                } else {
+                    // Create new file in scripts folder
+                    const newNode = {
+                        id: 'blueprint_' + Math.random().toString(36).substr(2, 9),
+                        name: fileName,
+                        type: 'script',
+                        content: content
+                    };
+                    const scriptsFolder = vfsGetNodeById('f1') || state.engine.vfs.root;
+                    scriptsFolder.children.push(newNode);
+                    vfsOpenFile(newNode.id);
+                }
+
                 setEngineTab('toryscript');
                 runToryScript();
-                notify(`Template "${name.toUpperCase()}" applied!`, "success");
+                notify(`Blueprint "${name.toUpperCase()}" deployed and saved to VFS!`, "success");
             }
         }
 
@@ -2716,6 +2745,7 @@ print("Iron Fortress Blueprint Deployed.");`
                     <span class="text-xs">${icon}</span>
                     <span class="text-[10px] font-mono ${isActive ? 'text-blue-400 font-bold' : 'text-slate-400'}">${node.name}</span>
                     <div class="ml-auto flex gap-1 opacity-0 group-hover:opacity-100">
+                        <button onclick="event.stopPropagation(); vfsRenameNode('${node.id}')" class="text-[8px] text-blue-500 hover:text-blue-400">✎</button>
                         <button onclick="event.stopPropagation(); vfsDeleteNode('${node.id}')" class="text-[8px] text-red-500 hover:text-red-400">×</button>
                     </div>
                 `;
@@ -2923,6 +2953,26 @@ print("Iron Fortress Blueprint Deployed.");`
             localStorage.setItem('tory_engine_vfs', JSON.stringify(state.engine.vfs));
         }
 
+        function vfsRenameNode(id) {
+            if (id === 'root') return;
+            const node = vfsGetNodeById(id);
+            if (!node) return;
+
+            const newName = prompt(`Rename "${node.name}" to:`, node.name);
+            if (newName && newName !== node.name) {
+                node.name = newName;
+                // If renaming a map, it might need type update but usually we keep it
+                if (newName.endsWith('.json')) node.type = 'map';
+                else if (newName.endsWith('.tory')) node.type = 'script';
+                else if (newName.endsWith('.toryconfig')) node.type = 'config';
+
+                updateVFSTree();
+                if (state.engine.vfs.activeFileId === id) loadActiveFile();
+                localStorage.setItem('tory_engine_vfs', JSON.stringify(state.engine.vfs));
+                notify(`Renamed to ${newName}`, 'success');
+            }
+        }
+
         function vfsDeleteNode(id) {
             if (id === 'root') return;
             if (!confirm("Delete this item?")) return;
@@ -3040,6 +3090,7 @@ print("Iron Fortress Blueprint Deployed.");`
                 { pattern: /\bdifficulty\s*\(/g, replacement: 'difficulty(' },
                 { pattern: /\bplayerName\s*\(/g, replacement: 'playerName(' },
                 { pattern: /\bbotNames\s*\(/g, replacement: 'botNames(' },
+                { pattern: /\bmod\s*\(/g, replacement: 'mod(' },
                 { pattern: /\briver\s*\(/g, replacement: 'drawRiver(' },
                 { pattern: /\bcluster\s*\(/g, replacement: 'drawCluster(' },
                 { pattern: /\btick\s*\(/g, replacement: 'onTick(' },
@@ -3507,6 +3558,22 @@ print("Iron Fortress Blueprint Deployed.");`
                 getEntities: () => state.entities.map((e, i) => ({ idx: i, id: e.id, name: e.name, balance: e.balance, tiles: e.ownedCount })),
                 setBalance: (amt) => { state.balance = amt; state.entities[1].balance = amt; updateUI(state.lastMaxBalance); },
                 notify: (msg, type) => notify(msg, type),
+                mod: (name, val) => {
+                    // Core Modding API: Expose internal settings for runtime modification
+                    const moddable = {
+                        'cycle_time': (v) => CONFIG.CYCLE = v,
+                        'tile_bonus': (v) => CONFIG.CITY_BONUS = v,
+                        'starting_balance': (v) => state.balance = v,
+                        'ai_aggression': (v) => state.entities.forEach(e => { if (e.type === 'bot') e.aggression = v; }),
+                        'ui_theme': (v) => document.body.style.setProperty('--tory-primary', v)
+                    };
+                    if (moddable[name]) {
+                        moddable[name](val);
+                        log(`Mod Applied: ${name} = ${val}`);
+                        return true;
+                    }
+                    return false;
+                },
                 log: (msg) => { 
                     if (customLog) customLog(msg);
                     else console.log(`[ToryScript] ${msg}`); 
@@ -3610,6 +3677,7 @@ print("Iron Fortress Blueprint Deployed.");`
                 console.log("- difficulty(level) : Set AI level");
                 console.log("- playerName(name) : Set commander name");
                 console.log("- botNames([names]) : Set bot name pool");
+                console.log("- mod(name, value) : Modify runtime settings");
                 console.log("- tick(tory() { ... }) : Add onTick hook");
                 console.log("- cycle(tory() { ... }) : Add onCycle hook");
                 console.log("- toggleExplorer() : Open Live Workspace Explorer");
