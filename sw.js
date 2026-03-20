@@ -1,4 +1,4 @@
-const CACHE_NAME = 'territory-io-v3.2.0';
+const CACHE_NAME = 'territory-io-v3.2.1'; // Incrementing version to trigger SW update
 const ASSETS = [
   'index.html',
   'manifest.webmanifest',
@@ -23,8 +23,14 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME).then((cache) => {
       // 1. Cache internal assets
       const internalPromises = ASSETS.map((asset) => {
-        return cache.add(asset).catch((err) => {
+        // Use a cache-busting fetch during installation to ensure we get fresh files
+        return fetch(`${asset}?t=${Date.now()}`).then(response => {
+          if (!response.ok) throw new Error('Network response was not ok');
+          return cache.put(asset, response);
+        }).catch((err) => {
           console.error(`Failed to cache asset: ${asset}`, err);
+          // Fallback to basic add if cache-busting fails
+          return cache.add(asset);
         });
       });
 
@@ -48,6 +54,7 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheName !== CACHE_NAME) {
+            console.log('[Service Worker] Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
         })
@@ -60,7 +67,10 @@ self.addEventListener('fetch', (event) => {
   // Always fetch index.html from network first to check for updates
   if (event.request.mode === 'navigate' || event.request.url.endsWith('index.html')) {
     event.respondWith(
-      fetch(event.request).then((response) => {
+      // Use a cache-busting fetch for the navigation request to bypass browser internal cache
+      fetch(`${event.request.url}${event.request.url.includes('?') ? '&' : '?'}t=${Date.now()}`, {
+        cache: 'no-store'
+      }).then((response) => {
         return caches.open(CACHE_NAME).then((cache) => {
           cache.put(event.request, response.clone());
           return response;
@@ -70,14 +80,16 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Stale-while-revalidate strategy for other assets
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request).then((fetchResponse) => {
+    caches.match(event.request).then((cachedResponse) => {
+      const fetchPromise = fetch(event.request).then((networkResponse) => {
         return caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, fetchResponse.clone());
-          return fetchResponse;
+          cache.put(event.request, networkResponse.clone());
+          return networkResponse;
         });
       });
+      return cachedResponse || fetchPromise;
     })
   );
 });
