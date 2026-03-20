@@ -2231,7 +2231,7 @@ setupEditor();` },
             }
         }
 
-        function toggleExplorer() {
+        function toggleExplorer(forceClose = false) {
             if (state.engine.initialized) {
                 console.log("ToryScript Explorer: Disabled in Engine Mode. Use built-in Asset Explorer tab.");
                 return;
@@ -2239,16 +2239,70 @@ setupEditor();` },
 
             const id = "tory-live-sidebar";
             const existing = document.getElementById(id);
-            if (existing) {
-                existing.style.transform = "translateX(100%)";
-                setTimeout(() => { existing.remove(); }, 300);
+            const iconId = "tory-vfs-toggle-icon";
+            
+            if (existing || forceClose) {
+                if (existing) {
+                    existing.style.transform = "translateX(100%)";
+                    setTimeout(() => { if (existing) existing.remove(); }, 400);
+                }
                 return;
             }
+
+            // Create Draggable Toggle Icon if it doesn't exist
+            let toggleIcon = document.getElementById(iconId);
+            if (!toggleIcon) {
+                toggleIcon = document.createElement("div");
+                toggleIcon.id = iconId;
+                toggleIcon.innerHTML = "📂";
+                toggleIcon.style.cssText = "position:fixed;right:20px;top:100px;width:50px;height:50px;background:rgba(59,130,246,0.9);backdrop-filter:blur(10px);border:2px solid rgba(255,255,255,0.2);border-radius:15px;display:flex;items-center;justify-content:center;font-size:24px;cursor:pointer;z-index:9998;box-shadow:0 10px 25px rgba(0,0,0,0.5);user-select:none;transition:transform 0.2s active:scale-90;line-height:50px;text-align:center;";
+                document.body.appendChild(toggleIcon);
+
+                // Draggable Logic
+                let isDragging = false;
+                let startX, startY, initialX, initialY;
+
+                toggleIcon.addEventListener('mousedown', (e) => {
+                    isDragging = false;
+                    startX = e.clientX; startY = e.clientY;
+                    const rect = toggleIcon.getBoundingClientRect();
+                    initialX = rect.left; initialY = rect.top;
+                    
+                    const move = (moveEvent) => {
+                        const dx = moveEvent.clientX - startX;
+                        const dy = moveEvent.clientY - startY;
+                        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) isDragging = true;
+                        toggleIcon.style.left = (initialX + dx) + "px";
+                        toggleIcon.style.top = (initialY + dy) + "px";
+                        toggleIcon.style.right = "auto";
+                    };
+                    const up = () => {
+                        window.removeEventListener('mousemove', move);
+                        window.removeEventListener('mouseup', up);
+                        if (!isDragging) {
+                            // Clicked, toggle sidebar
+                            const sidebar = document.getElementById(id);
+                            if (sidebar) {
+                                sidebar.style.transform = "translateX(0)";
+                                toggleIcon.style.display = "none";
+                            }
+                        }
+                    };
+                    window.addEventListener('mousemove', move);
+                    window.addEventListener('mouseup', up);
+                });
+            }
+            toggleIcon.style.display = "none"; // Hide icon when sidebar is open
 
             const sidebar = document.createElement("div");
             sidebar.id = id;
             sidebar.style.cssText = "position:fixed;right:0;top:0;width:350px;height:100vh;background:rgba(2,6,23,0.98);backdrop-filter:blur(30px);border-left:1px solid rgba(255,255,255,0.1);z-index:9999;padding:0;color:white;font-family:'Inter',sans-serif;overflow:hidden;transform:translateX(100%);transition:transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);box-shadow:-20px 0 80px rgba(0,0,0,0.8)";
             
+            const minimizeSidebar = () => {
+                sidebar.style.transform = "translateX(100%)";
+                toggleIcon.style.display = "flex";
+            };
+
             let html = `
                 <div class="flex flex-col h-full">
                     <!-- Sidebar Header -->
@@ -2258,10 +2312,13 @@ setupEditor();` },
                             <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Virtual File System</p>
                         </div>
                         <div class="flex gap-2">
-                            <button onclick="toggleExplorer()" title="Refresh Explorer" class="p-2 hover:bg-white/10 rounded-lg transition-colors text-slate-400 hover:text-white">
+                            <button id="vfs-refresh-btn" title="Refresh Explorer" class="p-2 hover:bg-white/10 rounded-lg transition-colors text-slate-400 hover:text-white">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                             </button>
-                            <button onclick="toggleExplorer()" title="Close Explorer" class="p-2 hover:bg-red-500/20 rounded-lg transition-colors text-slate-400 hover:text-red-400">
+                            <button id="vfs-minimize-btn" title="Minimize Explorer" class="p-2 hover:bg-white/10 rounded-lg transition-colors text-slate-400 hover:text-white">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </button>
+                            <button id="vfs-close-btn" title="Close Explorer" class="p-2 hover:bg-red-500/20 rounded-lg transition-colors text-slate-400 hover:text-red-400">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                             </button>
                         </div>
@@ -2296,6 +2353,11 @@ setupEditor();` },
             
             sidebar.innerHTML = html;
             document.body.appendChild(sidebar);
+
+            // Button Event Listeners
+            sidebar.querySelector('#vfs-refresh-btn').onclick = () => { sidebar.remove(); toggleExplorer(); };
+            sidebar.querySelector('#vfs-minimize-btn').onclick = minimizeSidebar;
+            sidebar.querySelector('#vfs-close-btn').onclick = () => { sidebar.remove(); toggleIcon.remove(); };
             
             const renderNode = (node, depth) => {
                 const container = document.createElement("div");
@@ -3271,8 +3333,11 @@ print("Iron Fortress Blueprint Deployed.");`
                 },
                 fill: (x, y, w, h, type) => {
                     const t = type === 'water' ? 0 : 1;
-                    for (let i = y; i < y + h; i++) {
-                        for (let j = x; j < x + w; j++) {
+                    const max_w = Math.min(w, 384);
+                    const max_h = Math.min(h, 216);
+                    for (let i = y; i < y + max_h; i++) {
+                        if (i % 10 === 0) __checkBudget(); // Check time budget during large loops
+                        for (let j = x; j < x + max_w; j++) {
                             if (j >= 0 && j < CONFIG.COLS && i >= 0 && i < CONFIG.ROWS) {
                                 (state.engine.initialized ? state.engine.mapData.tileTypes : state.tileTypes)[i * CONFIG.COLS + j] = t;
                             }
@@ -3384,11 +3449,21 @@ print("Iron Fortress Blueprint Deployed.");`
                 onCycle: (callback) => { if (typeof callback === 'function') state.hooks.onCycle.set(scriptId, callback); },
                 claimAll: (coordsArray, ownerIdx = 1) => {
                     if (!Array.isArray(coordsArray)) return;
-                    coordsArray.forEach(coord => {
+                    
+                    // Cap large batch claims to prevent main thread blocking
+                    const MAX_BATCH = 1000;
+                    const batch = coordsArray.slice(0, MAX_BATCH);
+                    
+                    batch.forEach(coord => {
                         if (coord && typeof coord.x === 'number' && typeof coord.y === 'number') {
                             claim(coord.x, coord.y, true, ownerIdx, true);
                         }
                     });
+                    
+                    if (coordsArray.length > MAX_BATCH) {
+                        log(`Warning: claimAll capped at ${MAX_BATCH} tiles per call to prevent crash.`);
+                    }
+
                     // Redraw the entire map once after batch claim
                     if (state.engine.initialized) drawEngineMap();
                     else drawRegion(0, 0, CONFIG.COLS-1, CONFIG.ROWS-1);
@@ -3417,6 +3492,7 @@ print("Iron Fortress Blueprint Deployed.");`
                 noise: (scale = 0.1, threshold = 0.45) => {
                     state.genParams = { scale, threshold };
                     for (let i = 0; i < CONFIG.ROWS; i++) {
+                        if (i % 10 === 0) __checkBudget(); // Check budget during terrain gen
                         for (let j = 0; j < CONFIG.COLS; j++) {
                             const val = Math.sin(j * scale) * Math.cos(i * scale);
                             (state.engine.initialized ? state.engine.mapData.tileTypes : state.tileTypes)[i * CONFIG.COLS + j] = val > threshold ? 0 : 1;
@@ -3776,7 +3852,19 @@ print("Iron Fortress Blueprint Deployed.");`
                 try {
                     // Wrap in async function
                     const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
-                const scriptFunc = new AsyncFunction(...Object.keys(api), `try { ${compiled} } catch(e) { log("Runtime Error: " + e.message); throw e; }`);
+                
+                // Wrap in a time-budgeted execution to prevent browser hangs
+                const timeBudgetedCode = `
+                    const __startTime = performance.now();
+                    const __checkBudget = () => {
+                        if (performance.now() - __startTime > 5000) { // 5s budget per execution
+                            throw new Error("ToryScript execution exceeded 5s time budget (Loop Protection)");
+                        }
+                    };
+                    ${compiled}
+                `;
+
+                const scriptFunc = new AsyncFunction(...Object.keys(api), `try { ${timeBudgetedCode} } catch(e) { log("Runtime Error: " + e.message); throw e; }`);
                 
                 if (options.onLog) options.onLog(`Executing ${scriptId}...`);
                     
