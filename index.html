@@ -906,7 +906,7 @@
                 </div>
                 <div class="h-6 w-[1px] bg-slate-800"></div>
                 <div class="flex gap-2">
-                    <button type="button" onclick="setEngineTab('editor')" id="tab-engine-editor" class="px-4 py-1.5 rounded-lg border border-blue-500/40 bg-blue-600/90 text-white text-[10px] font-bold uppercase tracking-wide" title="Map Editor">Map</button>
+                    <button type="button" onclick="setEngineTab('editor')" id="tab-engine-editor" class="px-4 py-1.5 rounded-lg border border-blue-500/40 bg-blue-600/90 text-white text-[10px] font-bold uppercase tracking-wide" title="Map Previewer">Preview</button>
                     <button type="button" onclick="setEngineTab('toryscript')" id="tab-engine-toryscript" class="px-4 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-400 text-[10px] font-bold uppercase tracking-wide" title="ToryScript Editor">Script</button>
                     <button type="button" onclick="setEngineTab('docs')" id="tab-engine-docs" class="px-4 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-400 text-[10px] font-bold uppercase tracking-wide" title="Documentation">Docs</button>
                     <button type="button" onclick="setEngineTab('explorer')" id="tab-engine-explorer" class="px-4 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-400 text-[10px] font-bold uppercase tracking-wide" title="Asset Explorer">Assets</button>
@@ -921,7 +921,7 @@
                     <div id="engine-status-brush" class="px-2 py-1 rounded-md border border-slate-700 bg-slate-900 text-[9px] text-cyan-300 font-mono uppercase">Brush: water</div>
                     <div id="engine-status-file" class="px-2 py-1 rounded-md border border-slate-700 bg-slate-900 text-[9px] text-emerald-300 font-mono uppercase">File: main.tory</div>
                 </div>
-                <button type="button" onclick="saveEngineMap()" class="bg-emerald-600 hover:bg-emerald-500 px-4 py-1.5 rounded-lg text-white text-[10px] font-bold uppercase border border-emerald-400/40 transition-colors" title="Save map to workspace">Save Map</button>
+                <button type="button" onclick="testEngineMap()" class="bg-blue-600 hover:bg-blue-500 px-4 py-1.5 rounded-lg text-white text-[10px] font-bold uppercase border border-blue-400/40 transition-colors" title="Test current map in-game">Test Map</button>
                 <button type="button" onclick="exportToryMap()" class="bg-purple-600 hover:bg-purple-500 px-4 py-1.5 rounded-lg text-white text-[10px] font-bold uppercase border border-purple-400/40 transition-colors" title="Export entire workspace as .torymap">Export Workspace</button>
                 <button type="button" onclick="importToryMapTrigger()" class="bg-slate-700 hover:bg-slate-600 px-4 py-1.5 rounded-lg text-slate-200 text-[10px] font-bold uppercase border border-slate-600 transition-colors" title="Import .torymap workspace">Import Workspace</button>
                 <button type="button" id="engine-fullscreen-btn" onclick="toggleEngineFullscreen()" class="bg-slate-800 hover:bg-slate-700 px-4 py-1.5 rounded-lg text-slate-300 text-[10px] font-bold uppercase border border-slate-700 transition-colors" title="Toggle Fullscreen">Fullscreen</button>
@@ -938,22 +938,10 @@
                     <canvas id="engine-canvas" class="absolute top-0 left-0"></canvas>
                 </div>
                 <!-- Toolbar -->
-                <div class="bg-gradient-to-t from-slate-950 to-slate-900 border-t border-slate-800 p-4 flex gap-4 items-center overflow-x-auto">
+                <div class="bg-gradient-to-t from-slate-950 to-slate-900 border-t border-slate-800 p-4 flex gap-4 items-center">
                     <div class="flex flex-col gap-1">
-                        <span class="text-[8px] text-slate-500 font-bold uppercase">Brush Type</span>
-                        <div class="flex gap-2">
-                            <button type="button" onclick="setEngineBrush('water')" id="brush-water" aria-label="Water brush" title="Water brush" class="px-3 h-8 rounded border border-cyan-500/60 bg-blue-900 text-cyan-200 text-[10px] font-bold uppercase">Water</button>
-                            <button type="button" onclick="setEngineBrush('land')" id="brush-land" aria-label="Land brush" title="Land brush" class="px-3 h-8 rounded border border-slate-700 bg-slate-800 text-slate-300 text-[10px] font-bold uppercase">Land</button>
-                            <button type="button" onclick="setEngineBrush('city')" id="brush-city" aria-label="City brush" title="City brush" class="px-3 h-8 rounded border border-slate-700 bg-slate-800 text-slate-300 text-[10px] font-bold uppercase">City</button>
-                            <button type="button" onclick="setEngineBrush('capital')" id="brush-capital" aria-label="Capital brush" title="Capital brush" class="px-3 h-8 rounded border border-slate-700 bg-slate-800 text-slate-300 text-[10px] font-bold uppercase">Capital</button>
-                        </div>
-                    </div>
-                    <div class="flex flex-col gap-1">
-                        <span class="text-[8px] text-slate-500 font-bold uppercase">Brush Size</span>
-                        <div class="flex items-center gap-2">
-                            <input type="range" id="engine-brush-size" min="1" max="10" value="1" aria-label="Brush size" title="Brush size" class="w-24 accent-blue-500">
-                            <span id="engine-brush-size-value" class="w-6 text-[10px] text-slate-300 font-mono text-right">1</span>
-                        </div>
+                        <span class="text-[8px] text-slate-500 font-bold uppercase">Map Preview Status</span>
+                        <div class="text-[10px] text-blue-400 font-mono">Real-time rendering enabled. Execute scripts to see changes.</div>
                     </div>
                     <div class="ml-auto text-[10px] text-slate-500 font-mono" id="engine-coords">X: 0, Y: 0</div>
                 </div>
@@ -1856,15 +1844,15 @@ cycle(tory() {
             <div id="sandbox-panel" class="hidden rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
                 <div class="space-y-4">
                     <button type="button" onclick="openSandboxEngine()" class="w-full bg-amber-600 hover:bg-amber-500 py-4 rounded-xl font-bold text-white shadow-[0_12px_30px_rgba(217,119,6,0.35)] active:scale-95 transition-all uppercase text-xs" title="Open the map creation engine">
-                        Open Map Engine
+                        Open Workspace Engine
                     </button>
                     <div class="relative">
-                        <input type="file" id="map-upload" accept=".json" aria-label="Upload map file" title="Upload map file" class="hidden" onchange="loadCustomMap(this)">
-                        <button type="button" onclick="document.getElementById('map-upload').click()" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-700 py-4 rounded-xl font-bold text-slate-300 shadow-lg active:scale-95 transition-all uppercase text-xs" title="Upload a previously saved map">
-                            Upload & Play Map
+                        <input type="file" id="map-upload" accept=".torymap,.json" aria-label="Upload workspace file" title="Upload workspace file" class="hidden" onchange="loadCustomMap(this)">
+                        <button type="button" onclick="document.getElementById('map-upload').click()" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-700 py-4 rounded-xl font-bold text-slate-300 shadow-lg active:scale-95 transition-all uppercase text-xs" title="Upload a previously saved workspace">
+                            Upload Workspace (.torymap)
                         </button>
                     </div>
-                    <p class="text-[9px] text-center text-slate-500 uppercase font-bold">Create maps in the engine or play custom ones</p>
+                    <p class="text-[9px] text-center text-slate-500 uppercase font-bold">Manage full project workspaces with VFS support</p>
                 </div>
             </div>
         </div>
@@ -2060,6 +2048,43 @@ cycle(tory() {
                     children: [
                         { id: 'f1', name: 'scripts', type: 'folder', children: [
                             { id: 's1', name: 'main.tory', type: 'script', content: '// ToryScript v2.9\nprint("Engine Booted...");\n\n// Run on game start\ntory onStart() {\n    reset();\n    seed(0.1, 0.45);\n    home(192, 108);\n}\n\nonStart();' },
+                            { id: 's_editor', name: 'terrain_editor.tory', type: 'script', content: `// ToryScript Terrain Editor v1.0
+// This script enables manual painting via the HUD.
+
+tory brushType = "land";
+tory brushSize = 2;
+
+tory setupEditor() {
+    clearUI();
+    
+    tory panelId = panel("Terrain Editor", "Select brush and click on map to paint.", {
+        layer: "hud",
+        style: "top: 20px; right: 20px; width: 200px;"
+    });
+
+    button("Land", tory() { brushType = "land"; notify("Brush: Land", "info"); }, { style: "width: 100%; margin-top: 5px;" });
+    button("Water", tory() { brushType = "water"; notify("Brush: Water", "info"); }, { style: "width: 100%; margin-top: 5px; background: #1e3a8a;" });
+    button("City", tory() { brushType = "city"; notify("Brush: City", "info"); }, { style: "width: 100%; margin-top: 5px; background: #f59e0b;" });
+    button("Capital", tory() { brushType = "capital"; notify("Brush: Capital", "info"); }, { style: "width: 100%; margin-top: 5px; background: #ef4444;" });
+
+    // Handle clicks on map
+    event("#engine-canvas", "mousedown", tory(e) {
+        tory rect = e.target.getBoundingClientRect();
+        tory x = Math.floor(((e.clientX - rect.left) / (rect.width / 3840)) / 10);
+        tory y = Math.floor(((e.clientY - rect.top) / (rect.height / 2160)) / 10);
+        
+        if (brushType == "land") paint(x - brushSize, y - brushSize, brushSize * 2, brushSize * 2, "land");
+        else if (brushType == "water") paint(x - brushSize, y - brushSize, brushSize * 2, brushSize * 2, "water");
+        else if (brushType == "city") city(x, y);
+        else if (brushType == "capital") home(x, y);
+        
+        update();
+    });
+
+    print("Terrain Editor Script Loaded.");
+}
+
+setupEditor();` },
                             { id: 's2', name: 'archipelago.tory', type: 'script', content: '// ToryScript Archipelago Generator\nreset();\nseed(0.2, 0.5);\n\n// Add some manual islands\nisland(100, 100, 20, "land");\nisland(284, 150, 15, "land");\n\n// Add cities\ncity(100, 100);\ncity(284, 150);\n\nhome(100, 100);\nprint("Archipelago Generated!");' },
                             { id: 's3', name: 'workspace_explorer.tory', type: 'script', content: `// Advanced Live Workspace Explorer v3.0
 // Must be executed via console: ToryScript.exec('toggleExplorer()')
@@ -2285,9 +2310,31 @@ toggleExplorer();` },
             updateVFSTree();
             loadActiveFile();
             updateEngineExplorer();
-            setEngineBrush(state.engine.brush);
             setEngineTab(state.engine.activeTab);
             updateEngineStatus();
+        }
+
+        function testEngineMap() {
+            const cityIndices = [];
+            let capitalIdx = null;
+            state.engine.mapData.tileTypes.forEach((t, i) => {
+                if (t === 5) cityIndices.push(i);
+                if (t === 6) capitalIdx = i;
+            });
+
+            const workspace = {
+                name: "Test Workspace",
+                version: state.version,
+                vfs: state.engine.vfs,
+                mapData: {
+                    tileTypes: Array.from(state.engine.mapData.tileTypes),
+                    cityIndices: cityIndices,
+                    capitalIdx: capitalIdx
+                },
+                timestamp: Date.now()
+            };
+
+            applyMapDataToGame(workspace);
         }
 
         function closeSandboxEngine() {
@@ -2306,34 +2353,18 @@ toggleExplorer();` },
             // Initial render
             drawEngineMap();
             
-            // Interaction
-            const handleEngineMove = (e) => {
-                if (!state.engine.isInteracting) return;
+            // Track mouse for coordinate display only
+            eCanvas.addEventListener('mousemove', (e) => {
                 const rect = eCanvas.getBoundingClientRect();
                 const scaleX = eCanvas.width / rect.width;
                 const scaleY = eCanvas.height / rect.height;
                 const x = Math.floor((e.clientX - rect.left) * scaleX / CONFIG.TILE_SIZE);
                 const y = Math.floor((e.clientY - rect.top) * scaleY / CONFIG.TILE_SIZE);
-                
                 if (x >= 0 && x < CONFIG.COLS && y >= 0 && y < CONFIG.ROWS) {
-                    applyEngineBrush(x, y);
                     document.getElementById('engine-coords').innerText = `X: ${x}, Y: ${y}`;
                 }
-            };
-
-            const handleEngineUp = () => { state.engine.isInteracting = false; };
-
-            eCanvas.addEventListener('mousedown', (e) => { state.engine.isInteracting = true; handleEngineMove(e); });
-            eCanvas.addEventListener('mousemove', handleEngineMove);
-            eCanvas.addEventListener('mouseleave', handleEngineUp);
-            window.addEventListener('mouseup', handleEngineUp);
-
-            const brushSizeInput = document.getElementById('engine-brush-size');
-            brushSizeInput.addEventListener('input', () => {
-                document.getElementById('engine-brush-size-value').innerText = brushSizeInput.value;
             });
-            document.getElementById('engine-brush-size-value').innerText = brushSizeInput.value;
-            
+
             state.engine.initialized = true;
         }
 
@@ -2361,64 +2392,9 @@ toggleExplorer();` },
         }
 
         function updateEngineStatus() {
-            const brushEl = document.getElementById('engine-status-brush');
             const fileEl = document.getElementById('engine-status-file');
-            if (brushEl) brushEl.innerText = `Brush: ${state.engine.brush}`;
             const activeFile = vfsGetNodeById(state.engine.vfs.activeFileId);
             if (fileEl) fileEl.innerText = `File: ${activeFile?.name || 'none'}`;
-        }
-
-        function setEngineBrush(type) {
-            state.engine.brush = type;
-            ['water', 'land', 'city', 'capital'].forEach(b => {
-                const btn = document.getElementById(`brush-${b}`);
-                if (!btn) return;
-                btn.className = b === type
-                    ? 'px-3 h-8 rounded border border-blue-400 bg-blue-600/20 text-blue-300 text-[10px] font-bold uppercase'
-                    : 'px-3 h-8 rounded border border-slate-700 bg-slate-800 text-slate-300 text-[10px] font-bold uppercase';
-            });
-            updateEngineStatus();
-        }
-
-        function applyEngineBrush(x, y) {
-            const size = parseInt(document.getElementById('engine-brush-size').value);
-            const typeMap = { 'water': 0, 'land': 1, 'city': 5, 'capital': 6 };
-            const type = typeMap[state.engine.brush];
-            
-            for (let i = -size + 1; i < size; i++) {
-                for (let j = -size + 1; j < size; j++) {
-                    const tx = x + i, ty = y + j;
-                    if (tx >= 0 && tx < CONFIG.COLS && ty >= 0 && ty < CONFIG.ROWS) {
-                        const idx = ty * CONFIG.COLS + tx;
-                        state.engine.mapData.tileTypes[idx] = type;
-                        
-                        // Special handling for capital (only one)
-                        if (type === 6) {
-                            if (state.engine.mapData.capitalIdx !== null) {
-                                state.engine.mapData.tileTypes[state.engine.mapData.capitalIdx] = 1;
-                                drawEngineTile(state.engine.mapData.capitalIdx % CONFIG.COLS, Math.floor(state.engine.mapData.capitalIdx / CONFIG.COLS));
-                            }
-                            state.engine.mapData.capitalIdx = idx;
-                        }
-                        
-                        drawEngineTile(tx, ty);
-                    }
-                }
-            }
-        }
-
-        function drawEngineTile(x, y) {
-            const eCtx = state.engine.ctx;
-            const type = state.engine.mapData.tileTypes[y * CONFIG.COLS + x];
-            let fill = COLORS.LAND;
-            if (type === 0) fill = COLORS.WATER;
-            else if (type === 5) fill = COLORS.CITY;
-            else if (type === 6) fill = COLORS.CAPITAL;
-            
-            eCtx.fillStyle = fill;
-            eCtx.fillRect(x * CONFIG.TILE_SIZE, y * CONFIG.TILE_SIZE, CONFIG.TILE_SIZE, CONFIG.TILE_SIZE);
-            if (type === 5) { eCtx.fillStyle = 'white'; eCtx.font = '8px Arial'; eCtx.textAlign = 'center'; eCtx.fillText('🏠', (x+0.5)*CONFIG.TILE_SIZE, (y+0.5)*CONFIG.TILE_SIZE); }
-            if (type === 6) { eCtx.fillStyle = 'white'; eCtx.font = '9px Arial'; eCtx.textAlign = 'center'; eCtx.fillText('👑', (x+0.5)*CONFIG.TILE_SIZE, (y+0.5)*CONFIG.TILE_SIZE); }
         }
 
         function toggleEngineFullscreen() {
@@ -2782,49 +2758,6 @@ toggleExplorer();` },
                 updateVFSTree();
                 localStorage.setItem('tory_engine_vfs', JSON.stringify(state.engine.vfs));
             }
-        }
-
-        function saveEngineMap() {
-            const name = prompt("Enter map name:", "custom_map");
-            if (!name) return;
-            
-            const cityIndices = [];
-            let capitalIdx = null;
-            state.engine.mapData.tileTypes.forEach((t, i) => {
-                if (t === 5) cityIndices.push(i);
-                if (t === 6) capitalIdx = i;
-            });
-
-            const mapData = {
-                name: name,
-                version: state.version,
-                tileTypes: Array.from(state.engine.mapData.tileTypes),
-                cityIndices: cityIndices,
-                capitalIdx: capitalIdx
-            };
-
-            const json = JSON.stringify(mapData);
-            const newNode = {
-                id: 'map_' + Math.random().toString(36).substr(2, 9),
-                name: name + '.json',
-                type: 'map',
-                content: json
-            };
-            
-            // Add to maps folder if it exists
-            const mapsFolder = vfsGetNodeById('f2') || state.engine.vfs.root;
-            mapsFolder.children.push(newNode);
-            localStorage.setItem('tory_engine_vfs', JSON.stringify(state.engine.vfs));
-            
-            // Download also
-            const blob = new Blob([json], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url; a.download = `${name}.json`; a.click();
-            
-            updateVFSTree();
-            updateEngineStatus();
-            notify("Map saved to VFS and downloaded!", "success");
         }
 
         function updateEngineExplorer() {
@@ -3533,32 +3466,42 @@ toggleExplorer();` },
             reader.onload = (e) => {
                 try {
                     const data = JSON.parse(e.target.result);
-                    // Support both raw map JSON and .torymap workspace format
-                    if (data.mapData && data.vfs) {
-                        applyMapDataToGame(data.mapData);
-                    } else {
+                    // Force .torymap workspace format for VFS support
+                    if (data.vfs && data.mapData) {
                         applyMapDataToGame(data);
+                    } else {
+                        // Legacy support or partial data - wrap it in a workspace
+                        applyMapDataToGame({
+                            vfs: initVFS(),
+                            mapData: data
+                        });
                     }
                 } catch (err) {
-                    alert("Invalid map file!");
+                    alert("Invalid workspace or map file!");
                 }
             };
             reader.readAsText(file);
         }
 
-        function applyMapDataToGame(data) {
+        function applyMapDataToGame(workspace) {
             if (state.initialized) {
-                if (!confirm("Start new game with this map? Current progress will be lost.")) return;
-                localStorage.setItem('custom_map_to_play', JSON.stringify(data));
+                if (!confirm("Start new game with this workspace? Current progress will be lost.")) return;
+                localStorage.setItem('custom_map_to_play', JSON.stringify(workspace));
                 location.reload(); 
                 return;
             }
             
+            // Load VFS into state
+            if (workspace.vfs) {
+                state.engine.vfs = workspace.vfs;
+                localStorage.setItem('tory_engine_vfs', JSON.stringify(workspace.vfs));
+            }
+
+            const data = workspace.mapData || workspace; // Fallback for old formats
             state.customMapData = data;
             startGame('single'); 
             
-            // The generateWorld call in startGame already drew the world.
-            // We overwrite and redraw only if necessary, or just rely on drawRegion.
+            // Apply map data buffers
             state.tileTypes.set(new Uint8Array(data.tileTypes));
             state.cityIndices = new Set(data.cityIndices);
             data.cityIndices.forEach(idx => {
@@ -3566,10 +3509,10 @@ toggleExplorer();` },
                 state.cityPopulations[idx] = 1000;
             });
             
-            // Full redraw once
+            // Full redraw
             drawRegion(0, 0, CONFIG.COLS-1, CONFIG.ROWS-1);
             closeSandboxEngine();
-            notify(`Loaded map: ${data.name}`, 'success');
+            notify(`Loaded Workspace: ${workspace.name || 'Custom'}`, 'success');
         }
 
         // Check for custom map on load
