@@ -2350,6 +2350,15 @@ toggleExplorer();` },
             state.engine.ctx = eCtx;
             state.engine.mapData.tileTypes = new Uint8Array(CONFIG.COLS * CONFIG.ROWS).fill(1); // Default to land
             
+            // Initialize dummy entities if empty to prevent script crashes
+            if (state.entities.length === 0) {
+                state.entities = [
+                    { id: 'WILD', type: 'wild', color: COLORS.LAND },
+                    { id: 'PLAYER', type: 'player', tileCost: 10, balance: 1000, color: COLORS.OWNED, ownedCount: 0, cityCount: 0, capitalPos: null }
+                ];
+                state.bordersByOwner = [new Set(), new Set()];
+            }
+
             // Initial render
             drawEngineMap();
             
@@ -3047,7 +3056,7 @@ toggleExplorer();` },
                             if (state.engine.mapData.capitalIdx !== null) state.engine.mapData.tileTypes[state.engine.mapData.capitalIdx] = 1;
                             state.engine.mapData.tileTypes[idx] = 6;
                             state.engine.mapData.capitalIdx = idx;
-                        } else {
+                        } else if (state.entities[1]) {
                             if (state.entities[1].capitalPos) {
                                 const oldIdx = state.entities[1].capitalPos.y * CONFIG.COLS + state.entities[1].capitalPos.x;
                                 state.tileTypes[oldIdx] = 1;
@@ -3073,6 +3082,7 @@ toggleExplorer();` },
                 },
                 playerLogic: (prop, val) => {
                     const player = state.entities[1];
+                    if (!player) return null;
                     if (val !== undefined) {
                         player[prop] = val;
                         if (prop === 'balance') state.balance = val;
@@ -4143,6 +4153,8 @@ toggleExplorer();` },
             const sideHostEntity = state.entities[sideHostIdx];
             const currentEntity = state.entities[entityIdx];
             
+            if (!sideHostEntity || !currentEntity) return 100 * (1 - researchDiscount) * (1 - warTileDiscount);
+
             // Teammates of the side host (Host or Target) pay regular price (1x)
             if (sideHostEntity.teamId !== undefined && sideHostEntity.teamId === currentEntity.teamId) {
                 return 1 * (1 - researchDiscount) * (1 - warTileDiscount);
@@ -4158,20 +4170,22 @@ toggleExplorer();` },
             if (state.tileTypes[idx] === 7) return; // Cannot claim mountains
             
             const entity = state.entities[ownerIdx];
+            if (!entity) return; // Safeguard for undefined entities (especially in engine mode)
+
             const isWater = state.tileTypes[idx] === 0 || state.tileTypes[idx] === 3 || state.tileTypes[idx] === 4;
-            let currentCost = isWater ? (entity.tileCost * CONFIG.BRIDGE_MULTIPLIER) : entity.tileCost;
+            let currentCost = 0;
             
-            // Apply war multiplier if not free
+            // Only calculate and check costs if not free
             if (!free) {
+                currentCost = isWater ? (entity.tileCost * CONFIG.BRIDGE_MULTIPLIER) : entity.tileCost;
                 currentCost *= getWarCostMultiplier(ownerIdx);
+                // Check if we can afford it (only for player)
+                if (ownerIdx === 1 && state.balance < currentCost) return;
             }
-            
-            // Check if we can afford it (only for player)
-            if (ownerIdx === 1 && !free && state.balance < currentCost) return;
 
             // Update ownership
             const oldOwnerIdx = state.tileOwners[idx];
-            if (oldOwnerIdx > 0) state.bordersByOwner[oldOwnerIdx].delete(idx);
+            if (oldOwnerIdx > 0 && state.bordersByOwner[oldOwnerIdx]) state.bordersByOwner[oldOwnerIdx].delete(idx);
             state.tileOwners[idx] = ownerIdx;
 
             // Record Capture for Peace Terms
@@ -4199,14 +4213,17 @@ toggleExplorer();` },
 
             // Update stats
             if (oldOwnerIdx !== 0) {
-                state.entities[oldOwnerIdx].ownedCount--;
-                // Handle city/capital capture
-                if (state.tileTypes[idx] === 5 || state.tileTypes[idx] === 6) {
-                    state.entities[oldOwnerIdx].cityCount--;
-                    if (oldOwnerIdx === 1) state.cityCount--;
-                    if (state.tileTypes[idx] === 6) {
-                        state.entities[oldOwnerIdx].hasCapital = false;
-                        state.entities[oldOwnerIdx].capitalPos = null;
+                const oldEntity = state.entities[oldOwnerIdx];
+                if (oldEntity) {
+                    oldEntity.ownedCount--;
+                    // Handle city/capital capture
+                    if (state.tileTypes[idx] === 5 || state.tileTypes[idx] === 6) {
+                        oldEntity.cityCount--;
+                        if (oldOwnerIdx === 1) state.cityCount--;
+                        if (state.tileTypes[idx] === 6) {
+                            oldEntity.hasCapital = false;
+                            oldEntity.capitalPos = null;
+                        }
                     }
                 }
             }
