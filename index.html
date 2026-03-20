@@ -1256,7 +1256,7 @@ tory setupMap() {      // Function definition
                                     <p class="text-slate-400 text-xs leading-relaxed">Directly interface with the engine. Every game mode supports hidden scripting capabilities via the <code class="text-blue-400">ToryScript</code> object.</p>
                                     <div class="space-y-2">
                                         <pre class="bg-black/50 p-3 rounded-xl text-[10px] text-blue-400 font-mono">ToryScript.help(); // View Full API</pre>
-                                        <pre class="bg-black/50 p-3 rounded-xl text-[10px] text-emerald-400 font-mono">ToryScript.exec("player('balance', 10000);");</pre>
+                                        <pre class="bg-black/50 p-3 rounded-xl text-[10px] text-emerald-400 font-mono">ToryScript.exec("toggleExplorer();");</pre>
                                     </div>
                                 </div>
                                 <div class="space-y-4">
@@ -2345,6 +2345,8 @@ tory toggleExplorer() {
     print("Modular Live Workspace Generated.");
 }
 
+// Export to window for global access via ToryScript.exec()
+window.toggleExplorer = toggleExplorer;
 toggleExplorer();` },
                             { id: 's4', name: 'live_mod.tory', type: 'script', content: '// Live Mod Example\n// Increases player balance every cycle and logs every tick\n\ntick(tory() {\n    // This runs every second\n    // print("Tick..."); \n});\n\ncycle(tory() {\n    // This runs every 10 seconds\n    tory current = player("balance");\n    player("balance", current + 1000);\n    print("Cycle Bonus: +$1000");\n});\n\nprint("Live Mod Active!");' },
                             { id: 'f1_bots', name: 'bots', type: 'folder', children: [
